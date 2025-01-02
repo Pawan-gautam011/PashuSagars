@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     "auths",
+    "products",
     'rest_framework',
     'rest_framework_simplejwt',
     "corsheaders",
