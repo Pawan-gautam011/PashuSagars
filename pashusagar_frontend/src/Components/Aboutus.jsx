@@ -2,6 +2,8 @@ import React from 'react'
 import { PawPrint, MoveRight,Stethoscope, CalendarCheck,HeartPulse}  from "lucide-react";
 import about from "../assets/about1.jpg";
 import about2 from "../assets/about4.png";
+import Navbar from './Navbar';
+import Footer from './Footer';
 const Aboutus = () => {
 
 
@@ -39,6 +41,7 @@ const Aboutus = () => {
 
   return (
 <>
+<Navbar/>
 <div className="bg-[#004D40] h-auto relative overflow-hidden text-center pt-16 font-bold text-wrap">
 <h2 className="text-[#55DD4A] text-6xl">About Us</h2>
 <h1 className="uppercase mt-9 text-xl text-[#ADE1B0]">
@@ -86,7 +89,6 @@ Because your pet deserves the best
   </div>
 </div>
 
-
 <div className="flex justify-between items-center mt-12 flex-col md:flex-row mb-20 px-8">
   <div className="flex-1">
     <img src={about} alt="Why Choose Us" className="rounded-lg shadow-lg object-cover w-full h-auto" />
@@ -108,7 +110,7 @@ Because your pet deserves the best
   </div>
 </div>
 </div>
-
+<Footer/>
 </>
   )
 }

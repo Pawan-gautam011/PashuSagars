@@ -17,6 +17,7 @@ import fourStar from "../assets/4star.png";
 import fiveStar from "../assets/5star.png";
 import Aboutus from "../Components/Aboutus";
 import FAQS from "../Components/FAQS";
+import { NavLink } from "react-router";
 
 const UserPage = () => {
   const services = [
@@ -25,17 +26,20 @@ const UserPage = () => {
       description:
         "Get all the medicines and supplements for your animals at one place.",
       icon: Ecommerce,
+      path: "/pharmacy",
     },
     {
       title: "Online Consultation",
       description:
         "Consult with our expert veterinarians to get the best advice for your pet.",
       icon: OnlineConsulation,
+      path: "/online-consultation",
     },
     {
       title: "Online Booking",
       description: "Book an appointment with our expert veterinarians.",
       icon: Appointment,
+      path: "/online-booking",
     },
   ];
 
@@ -145,10 +149,10 @@ const UserPage = () => {
         <div className="flex justify-center items-center mt-10">
           <button className="relative mb-20 flex items-center gap-x-2 border p-3 rounded-2xl text-[#F3EDE4] overflow-hidden group">
             <span className="absolute inset-0 bg-[#55DD4A] scale-x-0 origin-right transition-transform duration-300 group-hover:scale-x-100 z-0"></span>
-            <span className="relative z-10 flex items-center gap-x-2">
+            <NavLink to="/" className="relative z-10 flex items-center gap-x-2">
               Explore{" "}
               <MoveRight className="transition-transform duration-300 transform group-hover:translate-x-2" />
-            </span>
+            </NavLink>
           </button>
         </div>
 
@@ -185,10 +189,10 @@ const UserPage = () => {
               </p>
               <button className="relative mt-7 flex items-center  border p-3 rounded-2xl text-black overflow-hidden group">
                 <span className="absolute inset-0 bg-[#55DD4A] scale-x-0 origin-right transition-transform duration-300 group-hover:scale-x-100 z-0"></span>
-                <span className="relative z-10 flex items-center gap-x-4">
-                  Explore{" "}
-                  <MoveRight className="transition-transform duration-300 transform group-hover:translate-x-2" />
-                </span>
+                <NavLink to={service.path} className="relative z-10 flex items-center gap-x-4">
+                Explore{" "}
+                <MoveRight className="transition-transform duration-300 transform group-hover:translate-x-2" />
+              </NavLink>
               </button>
             </div>
           ))}
@@ -232,6 +236,13 @@ const UserPage = () => {
 
       <Aboutus />
       <FAQS/>
+      
+
+
+
+
+
+
     </>
   );
 };
