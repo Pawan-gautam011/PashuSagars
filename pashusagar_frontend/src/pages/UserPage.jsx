@@ -233,7 +233,6 @@ const UserPage = () => {
           ))}
         </Slider>
       </div>
-
       <Aboutus />
       <FAQS/>
       

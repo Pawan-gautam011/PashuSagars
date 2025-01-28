@@ -32,10 +32,15 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "auths",
-    "products",
-    'rest_framework',
+   'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'channels',
+
+    # Local apps
+    'auths',
+    'products',
+    # 'orders',
     "corsheaders",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -44,6 +49,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+
+# Channels settings
+ASGI_APPLICATION = 'core.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -76,19 +90,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+import os
+import dj_database_url
+
+# Database configuration
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'pashusagar',
-        'USER': 'root',
-        'HOST': 'localhost',  
-        'PORT': '3306',       
-    }
+    'default': dj_database_url.config(
+        default=os.getenv(
+            'DATABASE_URL',
+            'mysql://avnadmin:AVNS_MY1QayUY1gnvxs-AvuO@mysql-3be3c717-motivate23a-4efa.l.aivencloud.com:11922/defaultdb?ssl-mode=REQUIRED'
+        )
+    )
 }
+
+# Manually add the OPTIONS for SQL mode
+DATABASES['default']['OPTIONS'] = {
+    'init_command': "SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'"
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -107,6 +129,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'auths.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend', 
+]
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'auths.CustomUser'
@@ -116,6 +143,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -136,6 +164,9 @@ SIMPLE_JWT = {
 }
 
 
+KHALTI_SECRET_KEY = 'dc2a944e649a4a3d94240158c4a6a361'
+
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -146,7 +177,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 import os
 
