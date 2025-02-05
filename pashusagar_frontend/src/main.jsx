@@ -14,7 +14,6 @@ import Aboutus from "./Components/Aboutus.jsx";
 import MainLayout from "./Components/MainLayout.jsx";
 import PrivateRoute from "./role/PrivateRoute.jsx";
 import MyAccount from "./Components/MyAccount.jsx"
-import Cart from "./Components/Cart.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -29,9 +28,6 @@ createRoot(document.getElementById("root")).render(
         <Route path="/online-booking" element={<OnlineBooking />} />
         <Route path="/aboutus" element={<Aboutus />} />
         <Route path="/myaccount" element ={<MyAccount/>} />
-        <Route path="/mycart" element ={<Cart/>} />
-        
-        
 
         <Route
           path="/aboutus"
