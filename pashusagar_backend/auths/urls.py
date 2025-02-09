@@ -1,18 +1,25 @@
+# urls.py
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
-    EditProfileView,
-    RegisterView,
+    UserRegistrationView,
+    VeterinarianRegistrationView,
     LoginAPIView,
     ProfileView,
-    ChangePasswordView
+    ChangePasswordView,
+    LogoutView,
+    ForgotPasswordOTPView,
+    ResetPasswordOTPView,
 )
-from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='auth_register'),
-    path('login/', LoginAPIView.as_view(), name='token_obtain_pair'),
+    path('register/user/', UserRegistrationView.as_view(), name='register_user'),
+    path('register/veterinarian/', VeterinarianRegistrationView.as_view(), name='register_veterinarian'),
+    path('login/', LoginAPIView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('profile/', ProfileView.as_view(), name='auth_profile'),
+    path('profile/', ProfileView.as_view(), name='profile'),
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
-    path('edit-profile/', EditProfileView.as_view(), name='edit_profile'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('password-reset/forgot/', ForgotPasswordOTPView.as_view(), name='forgot_password_otp'),
+    path('password-reset/confirm/', ResetPasswordOTPView.as_view(), name='reset_password_otp'),
 ]

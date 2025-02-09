@@ -33,7 +33,7 @@ const FAQS = () => {
   };
   return (
     <>
-   <div className="bg-[#00574B] h-auto relative overflow-hidden  pt-16  font-bold ">
+      <div className="bg-[#00574B] h-auto relative overflow-hidden  pt-16  font-bold ">
         <h2 className="text-[#55DD4A] text-6xl text-center">FAQs</h2>
         <h1 className="uppercase mt-9 text-center text-xl text-[#ADE1B0]">
         Frequently Asked Questions
