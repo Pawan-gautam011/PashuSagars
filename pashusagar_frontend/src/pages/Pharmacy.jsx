@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { addToCart } from "../redux/cartSlice";
 import Navbar from "../Components/Navbar";
@@ -12,8 +13,8 @@ const Pharmacy = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const breadcrumbItems = [
     { label: "Home", path: "/" },
@@ -34,10 +35,18 @@ const Pharmacy = () => {
       });
   }, []);
 
-  const handleAddToCart = (product) => {
-    const productToAdd = { ...product, quantity: 1 };
-    dispatch(addToCart(productToAdd));
-    setSelectedProduct(null);
+  const handleAddToCart = (e, product) => {
+    
+    e.stopPropagation(); 
+    const productToAdd = {
+      id: product.id,
+      name: product.title,
+      price: product.price,
+      description: product.description,
+      quantity: 1,
+      images: product.images 
+  };
+  dispatch(addToCart(productToAdd));
     
     toast.success(`${product.title} added to cart!`, {
       position: "top-right",
@@ -53,6 +62,10 @@ const Pharmacy = () => {
         color: 'white'
       }
     });
+  };
+
+  const handleProductClick = (productId) => {
+    navigate(`/product/${productId}`);
   };
 
   return (
@@ -76,13 +89,13 @@ const Pharmacy = () => {
               {products.map((product) => (
                 <div
                   key={product.id}
-                  onClick={() => setSelectedProduct(product)}
-                  className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300 cursor-pointer"
+                  onClick={() => handleProductClick(product.id)}
+                  className="bg-white rounded-lg shadow-lg cursor-pointer"
                 >
                   <img
                     src={product.images}
                     alt={product.title}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-48 object-cover rounded-t-lg"
                   />
                   <div className="p-4">
                     <h3 className="text-lg font-bold text-gray-800">
@@ -92,16 +105,13 @@ const Pharmacy = () => {
                       {product.description}
                     </p>
                     <p className="text-sm text-gray-800 font-semibold mt-4">
-                      Price: ${product.price}
+                      Price: Rs. {product.price}
                     </p>
                     <p className="text-sm text-gray-600">
                       Stock: {product.stock}
                     </p>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product);
-                      }}
+                      onClick={(e) => handleAddToCart(e, product)}
                       className="mt-4 bg-[#55DD4A] text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300"
                     >
                       Add to Cart
@@ -113,42 +123,6 @@ const Pharmacy = () => {
           )}
         </div>
         <Footer />
-
-        {selectedProduct && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div
-              className="absolute inset-0 bg-black opacity-50"
-              onClick={() => setSelectedProduct(null)}
-            ></div>
-            <div className="bg-white rounded-lg p-6 z-10 max-w-lg w-full relative">
-              <button
-                onClick={() => setSelectedProduct(null)}
-                className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
-              >
-                X
-              </button>
-              <img
-                src={selectedProduct.images}
-                alt={selectedProduct.title}
-                className="w-full h-64 object-cover mb-4 rounded"
-              />
-              <h2 className="text-2xl font-bold mb-2">
-                {selectedProduct.title}
-              </h2>
-              <p className="mb-2">{selectedProduct.description}</p>
-              <p className="mb-2 font-semibold">
-                Price: ${selectedProduct.price}
-              </p>
-              <p className="mb-4">Stock: {selectedProduct.stock}</p>
-              <button
-                onClick={() => handleAddToCart(selectedProduct)}
-                className="bg-[#55DD4A] text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300"
-              >
-                Add to Cart
-              </button>
-            </div>
-          </div>
-        )}
         <ToastContainer />
       </div>
     </>

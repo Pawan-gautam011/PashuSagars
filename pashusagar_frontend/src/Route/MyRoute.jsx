@@ -24,6 +24,7 @@ import PaymentSuccess from "../pages/PaymentSuccess.jsx";
 import ResetPassword from "../pages/ResetPassword.jsx";
 import ForgotPassword from "../pages/ForgetPassword.jsx";
 import History from "../Components/History.jsx";
+import ProductDetails from "../pages/ProductDetails.jsx";
 
 
 const MyRoute = () => {
@@ -37,6 +38,7 @@ const MyRoute = () => {
       <Route path="/signup" element={<Signup />} />
       <Route path="/changepassword" element={<ChangePassword />} />
       <Route path="/updateprofile" element={<UpdateProfile />} />
+      <Route path="/product/:id" element={<ProductDetails />} />
       <Route path="/pharmacy" element={<Pharmacy />} />
       <Route path="/online-consultation" element={<OnlineConsultation />} />
       <Route path="/online-booking" element={<OnlineBooking />} />
