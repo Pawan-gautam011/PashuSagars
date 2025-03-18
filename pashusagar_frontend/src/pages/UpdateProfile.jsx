@@ -86,17 +86,13 @@ const UpdateProfile = () => {
         }
         
         setProfile(initialState);
-        
-      
         toast.success("Profile updated successfully!");
         
-      
         const fileInput = document.querySelector('input[type="file"]');
         if (fileInput) {
           fileInput.value = '';
         }
         
-      
         setTimeout(() => {
           window.location.reload();
         }, 2000);
@@ -110,82 +106,133 @@ const UpdateProfile = () => {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Update Profile</h1>
-        <form onSubmit={handleSubmit} encType="multipart/form-data">
-          <div className="mb-4">
-            <label className="block mb-1">Username</label>
-            <input
-              type="text"
-              name="username"
-              value={profile.username}
-              onChange={handleChange}
-              className="border rounded p-2 w-full"
-              required
-            />
+      <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C] py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
+            <div className="mb-6 text-center">
+              <h2 className="text-2xl font-bold text-gray-900">Update Profile</h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Manage your account information
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-5">
+              <div className="flex justify-center mb-6">
+                {profile.profile_image && (
+                  <div className="relative">
+                    <img
+                      src={
+                        typeof profile.profile_image === 'string'
+                          ? profile.profile_image
+                          : URL.createObjectURL(profile.profile_image)
+                      }
+                      alt="Profile Preview"
+                      className="h-24 w-24 object-cover rounded-full border-4 border-[#1F2937]"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label 
+                  className="block text-sm font-medium text-gray-700 mb-1" 
+                  htmlFor="username"
+                >
+                  Username
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  id="username"
+                  value={profile.username}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
+                  placeholder="Enter your username"
+                  required
+                />
+              </div>
+
+              <div>
+                <label 
+                  className="block text-sm font-medium text-gray-700 mb-1" 
+                  htmlFor="email"
+                >
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  id="email"
+                  value={profile.email}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
+                  placeholder="Enter your email"
+                  required
+                />
+              </div>
+
+              <div>
+                <label 
+                  className="block text-sm font-medium text-gray-700 mb-1" 
+                  htmlFor="phone_number"
+                >
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  name="phone_number"
+                  id="phone_number"
+                  value={profile.phone_number}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
+                  placeholder="Enter your phone number"
+                />
+              </div>
+
+              <div>
+                <label 
+                  className="block text-sm font-medium text-gray-700 mb-1" 
+                  htmlFor="profile_image"
+                >
+                  Profile Image
+                </label>
+                <input
+                  type="file"
+                  name="profile_image"
+                  id="profile_image"
+                  onChange={handleFileChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-white hover:file:bg-[#374151]"
+                  accept="image/*"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Maximum file size: 10MB
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full bg-[#60dd57] text-white py-2 px-4 rounded-md hover:bg-[#41d636] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1F2937] transition-colors duration-200"
+                >
+                  Update Profile
+                </button>
+              </div>
+            </form>
           </div>
-          <div className="mb-4">
-            <label className="block mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={profile.email}
-              onChange={handleChange}
-              className="border rounded p-2 w-full"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block mb-1">Phone Number</label>
-            <input
-              type="text"
-              name="phone_number"
-              value={profile.phone_number}
-              onChange={handleChange}
-              className="border rounded p-2 w-full"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block mb-1">Profile Image</label>
-            <input
-              type="file"
-              name="profile_image"
-              onChange={handleFileChange}
-              className="border rounded p-2 w-full"
-              accept="image/*"
-            />
-            {profile.profile_image && (
-              <img
-                src={
-                  typeof profile.profile_image === 'string'
-                    ? profile.profile_image
-                    : URL.createObjectURL(profile.profile_image)
-                }
-                alt="Profile Preview"
-                className="mt-2 h-20 w-20 object-cover rounded-full"
-              />
-            )}
-          </div>
-          <button
-            type="submit"
-            className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
-          >
-            Update Profile
-          </button>
-        </form>
-        <ToastContainer
-          position="top-right"
-          autoClose={2000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
+        </div>
       </div>
+      <ToastContainer 
+        position="top-right" 
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </>
   );
 };

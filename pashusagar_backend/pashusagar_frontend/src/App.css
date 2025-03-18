@@ -1,0 +1,36 @@
+.breadcrumbs {
+    padding: 0;
+    /* background-color: red; */
+  
+    .breadcrumb-items {
+      .breadcrumb-item {
+        .breadcrumb-seperator {
+          margin: 0 4px;
+        }
+  
+        &.active {
+          color: #808080;
+        }
+      }
+    }
+  }
+
+  @keyframes fall {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh);
+      opacity: 0;
+    }
+  }
+  
+  .animate-fall {
+    animation: fall 5s linear infinite;
+  }
+
+  

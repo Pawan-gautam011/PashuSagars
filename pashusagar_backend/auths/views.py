@@ -1,16 +1,23 @@
+# views.py
+import random
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from django.core.mail import send_mail
 from django.contrib.auth import authenticate, update_session_auth_hash
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import CustomUser
+from .models import CustomUser, PasswordResetOTP
 from .serializers import (
+    UserListSerializer,
     UserRegistrationSerializer,
     VeterinarianRegistrationSerializer,
     ProfileSerializer,
     ChangePasswordSerializer,
+    ForgotPasswordSerializer,
+    ResetPasswordSerializer,
 )
 
+# Registration and Login Endpoints
 class UserRegistrationView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserRegistrationSerializer
@@ -50,6 +57,7 @@ class LoginAPIView(APIView):
             'username': user.username
         }, status=status.HTTP_200_OK)
 
+# Profile, Change Password, and Logout
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -88,14 +96,7 @@ class LogoutView(APIView):
         except Exception as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# views.py
-import random
-from rest_framework import generics, permissions, status
-from rest_framework.response import Response
-from django.core.mail import send_mail
-from .models import CustomUser, PasswordResetOTP
-from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer
-
+# Forgot and Reset Password Endpoints
 class ForgotPasswordOTPView(generics.GenericAPIView):
     serializer_class = ForgotPasswordSerializer
     permission_classes = [permissions.AllowAny]
@@ -112,7 +113,7 @@ class ForgotPasswordOTPView(generics.GenericAPIView):
 
         subject = "Your Password Reset OTP"
         message = f"Your OTP for password reset is {otp}. It is valid for 10 minutes."
-        from_email = "pashusagar@gmail.com"  
+        from_email = "pashusagar@gmail.com"
         recipient_list = [email]
         send_mail(subject, message, from_email, recipient_list)
 
@@ -154,3 +155,18 @@ class ResetPasswordOTPView(generics.GenericAPIView):
         otp_record.save()
 
         return Response({"detail": "Password reset successfully."}, status=status.HTTP_200_OK)
+
+class UserListView(generics.ListAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserListSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+# New: Deactivate Account Endpoint
+class DeactivateAccountView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        user.is_active = False
+        user.save()
+        return Response({"detail": "Account deactivated successfully."}, status=status.HTTP_200_OK)
