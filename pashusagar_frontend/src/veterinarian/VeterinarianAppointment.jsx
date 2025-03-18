@@ -12,6 +12,3 @@ const VeterinarianAppointment = () => {
 }
 
 export default VeterinarianAppointment;
-
-
-  

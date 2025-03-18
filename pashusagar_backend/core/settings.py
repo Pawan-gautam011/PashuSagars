@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'channels',
+    'blog',
+    'notifications',
 
     # Local apps
     'auths',
@@ -98,19 +100,28 @@ import os
 import dj_database_url
 
 # Database configuration
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv(
-            'DATABASE_URL',
-            'mysql://avnadmin:AVNS_MY1QayUY1gnvxs-AvuO@mysql-3be3c717-motivate23a-4efa.l.aivencloud.com:11922/defaultdb?ssl-mode=REQUIRED'
-        )
-    )
-}
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.getenv(
+#             'DATABASE_URL',
+#             'mysql://avnadmin:AVNS_i-O1aHr-j1Cg6m7EQqR@mysql-4db5a65-pawangautam0320-ff6a.h.aivencloud.com:23685/defaultdb?ssl-mode=REQUIRED'
+#         )
+#     )
+# }
 
 # Manually add the OPTIONS for SQL mode
-DATABASES['default']['OPTIONS'] = {
-    'init_command': "SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'"
+# DATABASES['default']['OPTIONS'] = {
+#     'init_command': "SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'"
+# }
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / "db.sqlite3",
+    }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -165,7 +176,7 @@ SIMPLE_JWT = {
 }
 
 
-KHALTI_SECRET_KEY = 'dc2a944e649a4a3d94240158c4a6a361'
+KHALTI_SECRET_KEY = 'b31bf9ea80f44e378c6a3d8bc20c05cb'
 
 
 

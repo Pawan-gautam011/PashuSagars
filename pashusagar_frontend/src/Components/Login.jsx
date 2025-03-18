@@ -1,29 +1,35 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom"; // For programmatic navigation
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { FcGoogle } from "react-icons/fc";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const Login = () => {
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
+  const { loginWithRedirect } = useAuth0();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); 
+    setError("");
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/auth/login/", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/auth/login/",
+        {
+          email,
+          password,
+        }
+      );
+
+      console.log("Login response:", response.data);
 
       const { access, username, email: userEmail, role } = response.data;
 
-      if (!role) {
+      if (role === undefined || role === null) {
         throw new Error("Role not found in the response.");
       }
 
@@ -32,21 +38,20 @@ const Login = () => {
       localStorage.setItem("email", userEmail);
       localStorage.setItem("role", role);
 
-      if (role === 2) {
+      if (role === 0) {
         navigate("/admin");
-      } else if (role === 1) {
-        navigate("/user");
+      } else if (role === 2) {
+        navigate("/veterinarians");
       } else {
         navigate("/");
       }
     } catch (err) {
       console.error(err);
-
-      if (err.response) {
-        setError(err.response.data.detail || "Invalid email or password.");
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
+      setError(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          "Invalid email or password."
+      );
     }
   };
 
@@ -102,7 +107,10 @@ const Login = () => {
                 />
                 <span className="ml-2">Remember me</span>
               </label>
-              <Link to="/forgetpassword" className="text-sm text-[#009366] hover:underline">
+              <Link
+                to="/forgetpassword"
+                className="text-sm text-[#009366] hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -114,6 +122,15 @@ const Login = () => {
               Sign in
             </button>
           </form>
+
+          <button
+            onClick={() => loginWithRedirect()}
+            type="button"
+            className="border-2  mt-2 text-[#00574B] bg-white justify-center gap-x-2 w-full font-medium rounded-lg text-sm px-5 py-2.5 hover:bg-[#00574B] hover:text-white flex focus:outline-none focus:ring-4 focus:ring-[#ADE1B0]"
+          >
+            <FcGoogle size={25} />
+            <span className="text-xl">Sign in with Google</span>
+          </button>
 
           <p className="text-sm text-center text-gray-500 mt-4">
             Don’t have an account yet?{" "}

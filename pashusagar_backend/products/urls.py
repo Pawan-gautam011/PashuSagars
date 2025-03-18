@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    CategoryListCreateView, CategoryDetailView,
+    AdminDashboardView, AdminReportView, AppointmentDetailUpdateView, CategoryListCreateView, CategoryDetailView, DashboardStatsView,
     ProductListCreateView, ProductDetailView,
     MessageListCreateView, MessageDetailView,
     AppointmentListCreateView, AppointmentDetailView, ProductReduceStockView, ProductRestockView, ProductSearchView, VeterinarianAppointmentListView
@@ -24,8 +24,15 @@ urlpatterns = [
     path('appointments/', AppointmentListCreateView.as_view(), name='appointment_list_create'),
     path('appointments/<int:pk>/', AppointmentDetailView.as_view(), name='appointment_detail'),
     path('veterinarian-appointments/', VeterinarianAppointmentListView.as_view(), name='veterinarian_appointments'),
-
+    path('appointment/<int:pk>/', AppointmentDetailUpdateView.as_view(), name='appointment-detail-update'),
+    
     #inventory
     path('inventories/<int:pk>/', ProductRestockView.as_view(), name='inventory_list_create'),
     path('inventoriesreduces/<int:pk>/', ProductReduceStockView.as_view(), name='inventory_detail'),
+
+    #Dashboard
+    path('dashboard-stats/', DashboardStatsView.as_view(), name='dashboard-stats'),
+    path('dashboard-stats/', AdminDashboardView.as_view(), name='admin-dashboard-stats'),
+    path('generate-report/', AdminReportView.as_view(), name='admin-generate-report'),
+
 ]

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Navbar from "../Components/Navbar";
-import Footer from "../Components/Footer";
-import Breadcrumbs from "../Components/BreadCrumbs";
+import { Upload, IndianRupee, Package, ListPlus, FileText } from "lucide-react";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AddMedicine = () => {
   const [title, setTitle] = useState("");
@@ -10,14 +10,9 @@ const AddMedicine = () => {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [productImage, setProductImage] = useState(null);
-  const [category, setCategory] = useState(""); // Selected category id
-  const [categories, setCategories] = useState([]); // List of available categories
-  const [message, setMessage] = useState("");
-
-  const breadcrumbItems = [
-    { label: "Home", path: "/veterinarian" },
-    { label: "Add Product", path: "/add-product" },
-  ];
+  const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -26,6 +21,7 @@ const AddMedicine = () => {
         setCategories(response.data);
       } catch (error) {
         console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories");
       }
     };
     fetchCategories();
@@ -34,6 +30,15 @@ const AddMedicine = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setProductImage(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -57,143 +62,161 @@ const AddMedicine = () => {
         },
       };
       await axios.post("http://127.0.0.1:8000/api/products/", formData, config);
-      setMessage("Product added successfully!");
+      toast.success("Medicine added successfully!");
       setTitle("");
       setDescription("");
       setPrice("");
       setStock("");
       setProductImage(null);
       setCategory("");
+      setImagePreview(null);
     } catch (error) {
       console.error("Error adding product:", error);
-      setMessage("Error adding product. Please try again.");
+      toast.error("Failed to add medicine. Please try again.");
     }
   };
 
   return (
-    <>
-      <Navbar />
-      <div className="bg-gray-900 min-h-screen relative overflow-hidden text-center pt-16 font-sans">
-        <Breadcrumbs items={breadcrumbItems} />
-        <h2 className="text-green-400 text-5xl font-bold tracking-wide">Add Product</h2>
-        <h1 className="uppercase mt-4 text-xl text-gray-300 tracking-wider">
-          Add a new product to the pharmacy.
-        </h1>
-        <hr className="mt-5 border-green-400 mx-auto w-24" />
-        <div className="container mx-auto px-4 py-10">
-          {message && (
-            <div className="mb-4 text-lg text-center text-green-500">
-              {message}
-            </div>
-          )}
-          <form
-            onSubmit={handleSubmit}
-            className="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-2xl"
-          >
-            {/* Product Name */}
-            <div className="mb-4">
-              <label htmlFor="title" className="block text-gray-300 text-sm font-medium mb-2">
-                Product Name
-              </label>
+    <div className="bg-gradient-to-b from-[#00574B] to-[#009366] min-h-screen flex justify-center items-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+        <h2 className="text-3xl font-bold text-center text-[#00574B] mb-6">Add Medicine</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="title" className="text-sm font-medium text-gray-700">
+              Medicine Name
+            </label>
+            <div className="relative">
               <input
                 type="text"
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded focus:outline-none focus:border-green-400 transition duration-300"
-                placeholder="Enter product name"
+                placeholder="Enter medicine name"
+                className="w-full p-3 border border-gray-300 rounded-lg pl-10 focus:outline-none focus:ring-2 focus:ring-[#009366]"
                 required
               />
+              <FileText className="absolute left-3 top-3 text-gray-400" size={20} />
             </div>
-            {/* Description */}
-            <div className="mb-4">
-              <label htmlFor="description" className="block text-gray-300 text-sm font-medium mb-2">
-                Description
-              </label>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="description" className="text-sm font-medium text-gray-700">
+              Description
+            </label>
+            <div className="relative">
               <textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded focus:outline-none focus:border-green-400 transition duration-300"
-                placeholder="Enter product description"
-                rows="4"
+                placeholder="Enter description"
+                className="w-full p-3 border border-gray-300 rounded-lg pl-10 focus:outline-none focus:ring-2 focus:ring-[#009366]"
                 required
-              />
+                rows={4}
+              ></textarea>
+              <ListPlus className="absolute left-3 top-3 text-gray-400" size={20} />
             </div>
-            {/* Price */}
-            <div className="mb-4">
-              <label htmlFor="price" className="block text-gray-300 text-sm font-medium mb-2">
-                Price
+          </div>
+
+          <div className="flex space-x-4">
+            <div className="flex-1 space-y-2">
+              <label htmlFor="price" className="text-sm font-medium text-gray-700">
+                Price (Rs.)
               </label>
-              <input
-                type="number"
-                id="price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded focus:outline-none focus:border-green-400 transition duration-300"
-                placeholder="Enter product price"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  id="price"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="Price"
+                  className="w-full p-3 border border-gray-300 rounded-lg pl-10 focus:outline-none focus:ring-2 focus:ring-[#009366]"
+                  required
+                />
+                <IndianRupee className="absolute left-3 top-3 text-gray-400" size={20} />
+              </div>
             </div>
-            {/* Stock */}
-            <div className="mb-4">
-              <label htmlFor="stock" className="block text-gray-300 text-sm font-medium mb-2">
+            <div className="flex-1 space-y-2">
+              <label htmlFor="stock" className="text-sm font-medium text-gray-700">
                 Stock
               </label>
-              <input
-                type="number"
-                id="stock"
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
-                className="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded focus:outline-none focus:border-green-400 transition duration-300"
-                placeholder="Enter stock quantity"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  id="stock"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  placeholder="Stock"
+                  className="w-full p-3 border border-gray-300 rounded-lg pl-10 focus:outline-none focus:ring-2 focus:ring-[#009366]"
+                  required
+                />
+                <Package className="absolute left-3 top-3 text-gray-400" size={20} />
+              </div>
             </div>
-            {/* Category Dropdown */}
-            <div className="mb-4">
-              <label htmlFor="category" className="block text-gray-300 text-sm font-medium mb-2">
-                Category
-              </label>
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded focus:outline-none focus:border-green-400 transition duration-300"
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* Product Image */}
-            <div className="mb-4">
-              <label htmlFor="productImage" className="block text-gray-300 text-sm font-medium mb-2">
-                Product Image
-              </label>
-              <input
-                type="file"
-                id="productImage"
-                onChange={handleImageChange}
-                className="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded focus:outline-none focus:border-green-400 transition duration-300"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition duration-300 w-full"
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="category" className="text-sm font-medium text-gray-700">
+              Category
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009366]"
+              required
             >
-              Add Product
-            </button>
-          </form>
-        </div>
-        <Footer />
+              <option value="">Select Category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="image" className="text-sm font-medium text-gray-700">
+              Product Image
+            </label>
+            <div className="relative">
+              <input type="file" id="image" onChange={handleImageChange} className="hidden" accept="image/*" required />
+              <label
+                htmlFor="image"
+                className="w-full p-3 border border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50"
+              >
+                <Upload className="mr-2" size={20} />
+                {productImage ? "Change Image" : "Upload Image"}
+              </label>
+            </div>
+            {imagePreview && (
+              <div className="mt-2">
+                <img src={imagePreview} alt="Preview" className="max-w-full h-auto rounded-lg" />
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-[#009366] text-white p-3 rounded-lg hover:bg-[#00574B] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009366]"
+          >
+            Add Medicine
+          </button>
+        </form>
       </div>
-    </>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </div>
   );
 };
 

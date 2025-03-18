@@ -98,3 +98,22 @@ class ResetPasswordSerializer(serializers.Serializer):
         if not CustomUser.objects.filter(email=value).exists():
             raise serializers.ValidationError("User with this email does not exist.")
         return value
+
+class UserListSerializer(serializers.ModelSerializer):
+    role_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = (
+            'id',
+            'username',
+            'email',
+            'role',
+            'role_display',
+            'profile_image',
+            'phone_number',
+        )
+        read_only_fields = ('id', 'username', 'email', 'role', 'profile_image', 'phone_number')
+
+    def get_role_display(self, obj):
+        return obj.get_role_display()

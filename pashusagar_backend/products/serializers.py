@@ -34,15 +34,13 @@ class MessageSerializer(serializers.ModelSerializer):
 
 # Appointment Serializer
 class AppointmentSerializer(serializers.ModelSerializer):
-    veterinarian_name = serializers.ReadOnlyField(source='veterinarian.username')
     customer_name = serializers.ReadOnlyField(source='customer.username')
 
     class Meta:
         model = Appointment
         fields = [
-            'id', 'veterinarian', 'veterinarian_name', 'customer', 'customer_name',
-            'first_name', 'last_name', 'email', 'phone_number', 'pet_name',
-            'appointment_date', 'description', 'is_confirmed'
+            'id', 'customer', 'customer_name', 'first_name', 'last_name',
+            'email', 'appointment_date', 'description', 'is_confirmed', 'status'
         ]
         read_only_fields = ['id', 'customer', 'customer_name']
 
@@ -55,3 +53,35 @@ class ProductStockUpdateSerializer(serializers.Serializer):
         if value <= 0:
             raise serializers.ValidationError("Quantity must be greater than zero.")
         return value
+    
+# Serializer for Dashboard Stats
+class DashboardStatsSerializer(serializers.Serializer):
+    total_products = serializers.IntegerField()
+    total_appointments = serializers.IntegerField()
+    pending_appointments = serializers.IntegerField()
+    total_messages = serializers.IntegerField()
+    unread_messages = serializers.IntegerField()
+
+
+from rest_framework import serializers
+from auths.models import CustomUser
+from orders.models import Order, OrderItem
+from django.db.models import Sum
+
+class AdminDashboardSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField()
+    total_products = serializers.IntegerField()
+    total_appointments = serializers.IntegerField()
+    total_orders = serializers.IntegerField()
+    total_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+class ReportSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField()
+    total_products = serializers.IntegerField()
+    total_appointments = serializers.IntegerField()
+    total_orders = serializers.IntegerField()
+    total_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
+    pending_orders = serializers.IntegerField()
+    completed_orders = serializers.IntegerField()
+    failed_orders = serializers.IntegerField()
+    refunded_orders = serializers.IntegerField()
