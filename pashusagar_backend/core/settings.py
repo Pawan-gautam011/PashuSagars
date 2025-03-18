@@ -115,10 +115,22 @@ import dj_database_url
 # }
 
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / "db.sqlite3",
+#     }
+# }
+
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / "db.sqlite3",
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'pashusagar',
+        'USER': 'root',
+        'PASSWORD': 'admin',
+        'HOST':'localhost',
+        'PORT':'3306',
     }
 }
 
