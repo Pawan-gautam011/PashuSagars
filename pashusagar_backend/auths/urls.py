@@ -10,7 +10,7 @@ from .views import (
     ForgotPasswordOTPView,
     ResetPasswordOTPView,
     DeactivateAccountView,
-    UserListView, 
+    UserListView,
 )
 
 urlpatterns = [
@@ -24,5 +24,5 @@ urlpatterns = [
     path('password-reset/forgot/', ForgotPasswordOTPView.as_view(), name='forgot_password_otp'),
     path('password-reset/confirm/', ResetPasswordOTPView.as_view(), name='reset_password_otp'),
     path('deactivate-account/', DeactivateAccountView.as_view(), name='deactivate_account'),
-    path('users/', UserListView.as_view(), name='user_list'), 
+    path('users/', UserListView.as_view(), name='user_list'),
 ]

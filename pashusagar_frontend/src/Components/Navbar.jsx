@@ -11,7 +11,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 const Navbar = () => {
   const { isAuthenticated, user: auth0User, logout: auth0Logout, isLoading } = useAuth0();
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);

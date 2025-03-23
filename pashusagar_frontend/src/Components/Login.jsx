@@ -27,16 +27,16 @@ const Login = () => {
 
       console.log("Login response:", response.data);
 
-      const { access, username, email: userEmail, role } = response.data;
+      const { access, username, email: userEmail, role,user_id } = response.data;
 
       if (role === undefined || role === null) {
         throw new Error("Role not found in the response.");
       }
-
       localStorage.setItem("token", access);
       localStorage.setItem("username", username);
       localStorage.setItem("email", userEmail);
       localStorage.setItem("role", role);
+      localStorage.setItem("user_id", user_id);
 
       if (role === 0) {
         navigate("/admin");

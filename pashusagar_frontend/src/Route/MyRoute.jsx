@@ -1,3 +1,5 @@
+// MyRoute.jsx
+import React from "react";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import App from "../App.jsx";
 import Login from "../Components/Login.jsx";
@@ -26,13 +28,17 @@ import ProductDetails from "../pages/ProductDetails.jsx";
 import BlogList from "../pages/BlogList.jsx";
 import SingleBlog from "../pages/SingleBlog.jsx";
 import PaymentFailed from "../pages/paymentFailed.jsx";
+import AdminMessagePanel from "../Admin/AdminMessagePanel.jsx"; // Import the AdminMessagePanel
+import Message from "../pages/Message.jsx";
+import AdminMessage from "../pages/AdminMessage.jsx";
+import ProtectedRoutes from "../ProtectedRoutes.jsx";
 
 const MyRoute = () => {
   return (
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<App />} />
+          <Route path="/" element={<ProtectedRoutes Component={App}  />} />
           <Route path="/login" element={<Login />} />
           <Route path="/LoginUserpage" element={<LoginUserPage />} />
           <Route path="/signup" element={<Signup />} />
@@ -47,6 +53,8 @@ const MyRoute = () => {
           <Route path="/blogs" element={<BlogList />} />
           <Route path="/singleblog/:id" element={<SingleBlog />} />
           <Route path="/veterinarians" element={<VeterinarianPage />} />
+          <Route path="/message" element={<Message />} />
+          <Route path="/adminMessage" element={<AdminMessage />} />
           <Route
             path="/veterinarian-Appointment"
             element={<VeterinarianAppointment />}
@@ -62,6 +70,7 @@ const MyRoute = () => {
           <Route path="/forgetpassword" element={<ForgotPassword />} />
           <Route path="/resetpassword" element={<ResetPassword />} />
           <Route path="/history" element={<History />} />
+          <Route path="/admin-messages" element={<AdminMessagePanel />} /> {/* Add the AdminMessagePanel route */}
 
           <Route
             path="/veterinarian"

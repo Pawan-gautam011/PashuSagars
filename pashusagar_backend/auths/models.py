@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
 class CustomUser(AbstractUser):
     USER_ROLES = (
         (0, 'Admin'),
@@ -11,7 +12,6 @@ class CustomUser(AbstractUser):
     role = models.PositiveSmallIntegerField(choices=USER_ROLES, default=1)
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-
     specialization = models.CharField(max_length=200, blank=True, null=True)
     clinic_name = models.CharField(max_length=200, blank=True, null=True)
     USERNAME_FIELD = 'email'
