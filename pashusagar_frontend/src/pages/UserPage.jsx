@@ -1,25 +1,70 @@
-import React from "react";
-import { PawPrint, MoveRight } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { NavLink } from "react-router-dom";
+import { 
+  PawPrint, 
+  MoveRight, 
+  ShoppingBag, 
+  Video, 
+  Calendar, 
+  ChevronRight, 
+  ChevronLeft, 
+  Star,
+  ArrowRight
+} from "lucide-react";
 import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
+// Import assets (these should be your actual imports)
 import heroImg from "../assets/heroImg.png";
 import Ecommerce from "../assets/Ecommerce.png";
 import OnlineConsulation from "../assets/OnlineCounselling.png";
 import Appointment from "../assets/Booking.png";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+import fourStar from "../assets/4star.png";
+import fiveStar from "../assets/5star.png";
 import icon1 from "../assets/icon6.jpg";
 import icon2 from "../assets/icon2.jpg";
 import icon3 from "../assets/icon3.jpg";
 import icon4 from "../assets/icon4.jpg";
 import icon5 from "../assets/icon5.jpg";
 import icon6 from "../assets/icon2.jpg";
-import fourStar from "../assets/4star.png";
-import fiveStar from "../assets/5star.png";
+
+// Import components
 import Aboutus from "../Components/Aboutus";
 import FAQS from "../Components/FAQS";
-import { NavLink } from "react-router";
 
 const UserPage = () => {
+  const [activeFeature, setActiveFeature] = useState(0);
+  const sliderRef = useRef(null);
+
+  // Features for the services section
+  const features = [
+    {
+      id: 0,
+      title: "Shop for Medicines",
+      description: "Access a wide range of veterinary medications, supplements, and health products for your pets. Get doorstep delivery with secure payment options.",
+      icon: <ShoppingBag className="text-teal-600" size={32} />,
+      color: "bg-teal-50 border-teal-200",
+      path: "/pharmacy",
+    },
+    {
+      id: 1,
+      title: "Online Consultation",
+      description: "Connect with expert veterinarians through video calls and chat. Get professional advice and prescriptions without leaving your home.",
+      icon: <Video className="text-purple-600" size={32} />,
+      color: "bg-purple-50 border-purple-200",
+      path: "/online-consultation",
+    },
+    {
+      id: 2,
+      title: "Appointment Booking",
+      description: "Schedule in-person visits with our qualified veterinarians. Choose your preferred time slot and get instant confirmation.",
+      icon: <Calendar className="text-emerald-600" size={32} />,
+      color: "bg-emerald-50 border-emerald-200",
+      path: "/online-booking",
+    },
+  ];
+
   const services = [
     {
       title: "Pharmacy",
@@ -90,158 +135,313 @@ const UserPage = () => {
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 5000,
-    centerMode: true,
-    centerPadding: "0",
+    centerMode: false,
     responsive: [
       {
         breakpoint: 1024,
         settings: {
           slidesToShow: 2,
+          slidesToScroll: 1,
         },
       },
       {
-        breakpoint: 600,
+        breakpoint: 640,
         settings: {
           slidesToShow: 1,
+          slidesToScroll: 1,
+          centerMode: false,
         },
       },
     ],
     appendDots: (dots) => (
-      <div className="mt-10">
-        <ul className="flex justify-center">{dots}</ul>
+      <div className="mt-6">
+        <ul className="flex justify-center gap-2">{dots}</ul>
       </div>
+    ),
+    customPaging: () => (
+      <div className="w-2 h-2 bg-gray-300 rounded-full hover:bg-[#55DD4A]"></div>
     ),
   };
 
+  // Function to change the active feature
+  const nextFeature = () => {
+    setActiveFeature((prev) => (prev === features.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevFeature = () => {
+    setActiveFeature((prev) => (prev === 0 ? features.length - 1 : prev - 1));
+  };
+
+  // Auto-scroll for features
+  useEffect(() => {
+    const interval = setInterval(() => {
+      nextFeature();
+    }, 7000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
-      <div className="bg-gradient-to-b from-[#00574B] to-[#009366] h-auto relative overflow-hidden">
+      {/* Hero Section - Modern Design */}
+      <section className="min-h-[85vh] bg-gradient-to-br from-[#004d40] via-[#00796b] to-[#009688] relative overflow-hidden">
+        {/* Animated Background Elements */}
         <div className="absolute inset-0 pointer-events-none">
-          {Array(7)
+          {Array(15)
             .fill(null)
             .map((_, index) => (
               <PawPrint
                 key={index}
-                className="text-[#F3EDE4] absolute animate-fall"
+                className="absolute text-white/10"
                 style={{
-                  top: `-${Math.random() * 100}px`,
+                  top: `${Math.random() * 100}%`,
                   left: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 1}s`,
+                  opacity: 0.1 + Math.random() * 0.2,
+                  transform: `rotate(${Math.random() * 360}deg) scale(${0.5 + Math.random() * 1.5})`,
+                  animation: `float ${5 + Math.random() * 10}s ease-in-out ${Math.random() * 5}s infinite`,
                 }}
+                size={24 + Math.random() * 48}
               />
             ))}
         </div>
-        <div className="text-white text-center pt-16 font-bold capitalize text-wrap">
-          <h1 className="text-[#ADE1B0] tracking-tight text-[3rem] sm:text-[4rem] uppercase ">
-            From Pharmacy to Consultation,
-          </h1>
-          <h2 className="font-bold text-[#55DD4A] tracking-tight text-[5rem] uppercase -mt-5">
-            All in One Place
-          </h2>
-        </div>
 
-        <p className="text-white font-medium text-center px-8 mt-6 text-lg sm:text-xl md:text-2xl leading-relaxed max-w-3xl mx-auto">
-          Simplify supplier payments and streamline inventory management. Access
-          tools to improve <strong>veterinary</strong> services and grow your
-          business. Focus on caring for animals—we’ll handle the rest.
-        </p>
-
-        <div className="flex justify-center items-center mt-10">
-          <button className="relative mb-20 flex items-center gap-x-2 border p-3 rounded-2xl text-[#F3EDE4] overflow-hidden group">
-            <span className="absolute inset-0 bg-[#55DD4A] scale-x-0 origin-right transition-transform duration-300 group-hover:scale-x-100 z-0"></span>
-            <NavLink to="/" className="relative z-10 flex items-center gap-x-2">
-              Explore{" "}
-              <MoveRight className="transition-transform duration-300 transform group-hover:translate-x-2" />
-            </NavLink>
-          </button>
-        </div>
-
-        <img
-          src={heroImg}
-          alt=""
-          className="h-[30rem] w-[35rem] -mt-[35rem] mx-auto opacity-20 mb-20"
-        />
-      </div>
-
-      {/* Services Section */}
-      <div className="bg-gradient-to-b from-[#00796B] to-[#009688] h-auto relative overflow-hidden text-center pt-16 font-bold text-wrap">
-        <h2 className="text-[#55DD4A] text-4xl md:text-6xl">Our Services</h2>
-        <h1 className="uppercase mt-6 md:mt-9 text-lg md:text-xl text-[#ADE1B0] font-bold px-4">
-          Enjoy the Core Services that we Provide to Our Customers
-        </h1>
-        <hr className="mt-4 md:mt-5 border-t-2 border-[#ADE1B0] w-full mx-auto" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-12 md:mt-16 px-4 mb-20">
-          {services.map((service, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg shadow-lg p-6 text-center cursor-pointer hover:shadow-2xl h-auto flex flex-col items-center"
-            >
-              <img
-                src={service.icon}
-                alt={service.title}
-                className="h-16 md:h-20 mx-auto mb-4"
-              />
-              <h3 className="text-xl md:text-2xl font-bold mb-2">
-                {service.title}
-              </h3>
-              <p className="text-sm md:text-base text-gray-700">
-                {service.description}
+        <div className="container mx-auto px-4 py-20 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+            <div className="lg:w-1/2 text-center lg:text-left">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-6">
+                <span className="text-[#ADE1B0] block mb-3">From Pharmacy to Consultation,</span>
+                <span className="text-white">All in One Place</span>
+              </h1>
+              
+              <p className="text-white/90 text-lg md:text-xl font-light max-w-xl mx-auto lg:mx-0 mb-10 leading-relaxed">
+                Simplify your pet care journey with our comprehensive veterinary platform. Expert care for your animals, just a click away.
               </p>
-              <button className="relative mt-7 flex items-center  border p-3 rounded-2xl text-black overflow-hidden group">
-                <span className="absolute inset-0 bg-[#55DD4A] scale-x-0 origin-right transition-transform duration-300 group-hover:scale-x-100 z-0"></span>
-                <NavLink to={service.path} className="relative z-10 flex items-center gap-x-4">
-                Explore{" "}
-                <MoveRight className="transition-transform duration-300 transform group-hover:translate-x-2" />
-              </NavLink>
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Testinomials */}
-
-      <div className="bg-[#00574B] h-auto relative overflow-hidden text-center pt-16 font-bold text-wrap">
-        <h2 className="text-[#55DD4A] text-6xl">Testimonials</h2>
-        <h1 className="uppercase mt-9 text-xl text-[#ADE1B0]">
-          Our Hospital Impacts on their own Words
-        </h1>
-        <hr className="mt-5 border-[#ADE1B0]" />
-
-        <Slider {...settings} className="mt-16 mb-20 px-4">
-          {testimonials.map((testimonial, index) => (
-            <div key={index} className="px-4">
-              <div className="bg-white rounded-lg shadow-lg p-6 text-center h-80 flex flex-col justify-between">
-                <div>
-                  <img
-                    src={testimonial.icon}
-                    alt={testimonial.name}
-                    className="h-20 w-20 mx-auto mb-4 rounded-full object-cover"
-                  />
-                  <h3 className="text-2xl font-bold mb-2">
-                    {testimonial.name}
-                  </h3>
-                  <p className="text-gray-700">{testimonial.review}</p>
-                </div>
-                <img
-                  src={testimonial.star}
-                  alt="rating"
-                  className="h-8 mx-auto mt-4"
-                />
+              
+              <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                <NavLink to="/pharmacy" className="px-6 py-3 bg-[#55DD4A] text-white rounded-full font-medium flex items-center gap-2 transform transition duration-300 hover:bg-[#4BC940] hover:scale-105 hover:shadow-lg">
+                  Get Started
+                  <MoveRight size={18} />
+                </NavLink>
+                
+                <NavLink to="/online-consultation" className="px-6 py-3 border-2 border-white/30 text-white rounded-full font-medium transition duration-300 hover:bg-white/10 hover:border-white/60">
+                  Learn More
+                </NavLink>
               </div>
             </div>
-          ))}
-        </Slider>
-      </div>
-      <Aboutus />
-      <FAQS/>
-      
+            
+            <div className="lg:w-1/2 relative mt-12 lg:mt-0">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#004d40]/50 to-transparent rounded-full filter blur-xl"></div>
+              <img
+                src={heroImg}
+                alt="Veterinary Care"
+                className="relative z-10 w-full max-w-lg mx-auto animate-float"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Wave Separator */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" className="w-full">
+            <path 
+              fill="#FFFFFF" 
+              fillOpacity="1" 
+              d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
+            ></path>
+          </svg>
+        </div>
+      </section>
 
+      {/* Core Services Section */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <span className="text-[#55DD4A] font-medium text-sm uppercase tracking-wider">Our Core Pillars</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-2 mb-4">
+              Comprehensive Pet Care Solutions
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Discover how our platform can help you provide the best care for your pets through our three core services.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+            {features.map((feature, index) => (
+              <div 
+                key={index} 
+                className={`rounded-xl border p-6 shadow-sm transition duration-300 hover:shadow-md ${feature.color}`}
+              >
+                <div className="flex flex-col h-full">
+                  <div className="mb-4">
+                    {feature.icon}
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">{feature.title}</h3>
+                  
+                  <p className="text-gray-600 mb-6 flex-grow">{feature.description}</p>
+                  
+                  <NavLink 
+                    to={feature.path}
+                    className="inline-flex items-center text-[#004D40] font-medium hover:text-[#55DD4A] transition-colors"
+                  >
+                    Learn more <ArrowRight size={16} className="ml-2" />
+                  </NavLink>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
+      {/* Services Visual Blocks */}
+      <section className="py-16 bg-gradient-to-b from-[#f7f7f7] to-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <span className="text-[#55DD4A] font-medium text-sm uppercase tracking-wider">What We Offer</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-2 mb-4">
+              Our Services
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Enjoy the core services that we provide to our customers
+            </p>
+            <div className="h-1 w-24 bg-[#55DD4A] mx-auto mt-6 rounded-full"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-10">
+            {services.map((service, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl shadow-lg p-8 text-center transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+              >
+                <img
+                  src={service.icon}
+                  alt={service.title}
+                  className="h-16 md:h-20 mx-auto mb-6"
+                />
+                <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-3">
+                  {service.title}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {service.description}
+                </p>
+                <NavLink 
+                  to={service.path}
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-[#f8f8f8] text-[#004D40] font-medium border border-gray-200 hover:bg-[#55DD4A] hover:text-white hover:border-transparent transition-all duration-300"
+                >
+                  Explore <MoveRight className="ml-2" size={18} />
+                </NavLink>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
+      {/* Testimonials Section */}
+      <section className="py-16 md:py-24 bg-[#f7fbfa]">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-10">
+            <span className="text-[#55DD4A] font-medium text-sm uppercase tracking-wider">Testimonials</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-2 mb-4">
+              What Our Clients Say
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Discover what pet owners have to say about our services
+            </p>
+            <div className="h-1 w-24 bg-[#55DD4A] mx-auto mt-6 rounded-full"></div>
+          </div>
 
+          <div className="max-w-6xl mx-auto px-8">
+            <Slider ref={sliderRef} {...settings}>
+              {testimonials.map((testimonial, index) => (
+                <div key={index} className="px-3 py-5">
+                  <div className="bg-white rounded-xl p-6 shadow-sm transition-all duration-300 hover:shadow-md h-full flex flex-col">
+                    <div className="flex justify-center mb-4">
+                      <img
+                        src={testimonial.icon}
+                        alt={testimonial.name}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-[#55DD4A]"
+                      />
+                    </div>
+                    
+                    <div className="mb-4 flex justify-center">
+                      <img src={testimonial.star} alt="Rating" className="h-5" />
+                    </div>
+                    
+                    <p className="text-gray-700 text-center italic mb-6 flex-grow">
+                      "{testimonial.review}"
+                    </p>
+                    
+                    <h4 className="font-bold text-center text-gray-800">
+                      {testimonial.name}
+                    </h4>
+                  </div>
+                </div>
+              ))}
+            </Slider>
+          </div>
+        </div>
+      </section>
 
+      {/* Stats Section */}
+      <section className="py-12 md:py-16 bg-gradient-to-r from-[#004d40] to-[#00695c] text-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm transform transition-transform duration-300 hover:scale-105">
+              <h3 className="text-4xl md:text-5xl font-bold mb-2">2,500+</h3>
+              <p className="text-[#ADE1B0] font-medium">Happy Pets</p>
+            </div>
+            
+            <div className="text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm transform transition-transform duration-300 hover:scale-105">
+              <h3 className="text-4xl md:text-5xl font-bold mb-2">15+</h3>
+              <p className="text-[#ADE1B0] font-medium">Expert Veterinarians</p>
+            </div>
+            
+            <div className="text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm transform transition-transform duration-300 hover:scale-105">
+              <h3 className="text-4xl md:text-5xl font-bold mb-2">350+</h3>
+              <p className="text-[#ADE1B0] font-medium">Products Available</p>
+            </div>
+            
+            <div className="text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm transform transition-transform duration-300 hover:scale-105">
+              <h3 className="text-4xl md:text-5xl font-bold mb-2">24/7</h3>
+              <p className="text-[#ADE1B0] font-medium">Customer Support</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
+      {/* Call to Action */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="bg-gradient-to-br from-[#004d40] to-[#00695c] rounded-2xl overflow-hidden shadow-xl">
+            <div className="relative p-8 md:p-12">
+              {/* Background patterns */}
+              <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
+                <PawPrint size={200} className="text-white" />
+              </div>
+              
+              <div className="relative z-10 text-center max-w-3xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to care for your pet?</h2>
+                <p className="text-lg text-[#ADE1B0] mb-8">
+                  Join thousands of pet owners who trust our services for their animal healthcare needs.
+                </p>
+                
+                <div className="flex flex-wrap gap-4 justify-center">
+                  {/* <NavLink to="/signup" className="px-8 py-3 bg-[#55DD4A] text-white rounded-lg font-medium transition-all duration-300 hover:bg-white hover:text-[#004d40] transform hover:scale-105">
+                    Create Account
+                  </NavLink> */}
+                  
+                  <NavLink to="/contact" className="px-8 py-3 border-2 border-white text-white rounded-lg font-medium transition-all duration-300 hover:bg-white/10">
+                    Contact Us
+                  </NavLink>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Us and FAQs - Using existing components */}
+      {/* <Aboutus />
+      <FAQS /> */}
     </>
   );
 };

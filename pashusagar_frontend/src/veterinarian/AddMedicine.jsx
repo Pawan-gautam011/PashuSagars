@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Upload, IndianRupee, Package, ListPlus, FileText } from "lucide-react";
+import { Upload, IndianRupee, Package, ListPlus, FileText, AlertTriangle } from "lucide-react";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,6 +13,7 @@ const AddMedicine = () => {
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isPoisonous, setIsPoisonous] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -49,6 +50,7 @@ const AddMedicine = () => {
     formData.append("price", price);
     formData.append("stock", stock);
     formData.append("category", category);
+    formData.append("is_poisonous", isPoisonous);
     if (productImage) {
       formData.append("images", productImage);
     }
@@ -70,6 +72,7 @@ const AddMedicine = () => {
       setProductImage(null);
       setCategory("");
       setImagePreview(null);
+      setIsPoisonous(false);
     } catch (error) {
       console.error("Error adding product:", error);
       toast.error("Failed to add medicine. Please try again.");
@@ -174,6 +177,34 @@ const AddMedicine = () => {
               ))}
             </select>
           </div>
+
+          {/* Poisonous Medicine Checkbox */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isPoisonous"
+              checked={isPoisonous}
+              onChange={(e) => setIsPoisonous(e.target.checked)}
+              className="w-4 h-4 text-[#009366] rounded focus:ring-[#009366]"
+            />
+            <div className="flex items-center">
+              <label htmlFor="isPoisonous" className="text-sm font-medium text-gray-700 mr-2">
+                Mark as potentially poisonous for animals
+              </label>
+              <AlertTriangle size={16} className="text-amber-500" />
+            </div>
+          </div>
+          {isPoisonous && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+              <div className="flex items-start">
+                <AlertTriangle size={18} className="text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
+                <p>
+                  This medicine will be marked as potentially poisonous to animals.
+                  Users will be warned before purchasing this product.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label htmlFor="image" className="text-sm font-medium text-gray-700">

@@ -11,6 +11,7 @@ const EditMedicineForm = ({ medicine, onUpdate, onCancel }) => {
     stock: medicine?.stock || "",
     images: medicine?.images || "",
     category: medicine?.category?.id || "",
+    is_poisonous: medicine?.is_poisonous || false,
   })
   const [imagePreview, setImagePreview] = useState(medicine?.images || "")
   const [newImage, setNewImage] = useState(null)
@@ -30,6 +31,7 @@ const EditMedicineForm = ({ medicine, onUpdate, onCancel }) => {
         stock: medicine.stock || "",
         images: medicine.images || "",
         category: medicine.category?.id || "",
+        is_poisonous: medicine.is_poisonous || false,
       })
       setImagePreview(medicine.images || "")
     }
@@ -82,6 +84,14 @@ const EditMedicineForm = ({ medicine, onUpdate, onCancel }) => {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
+  }
+
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: checked,
+    }))
   }
 
   const handleImageChange = (e) => {
@@ -292,6 +302,37 @@ const EditMedicineForm = ({ medicine, onUpdate, onCancel }) => {
           <p className="mt-1 text-sm text-red-600">{errors.category}</p>
         )}
       </div>
+
+      {/* Poisonous Checkbox */}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="is_poisonous"
+          name="is_poisonous"
+          checked={formData.is_poisonous}
+          onChange={handleCheckboxChange}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+        <div className="flex items-center">
+          <label htmlFor="is_poisonous" className="text-sm font-medium text-gray-700 mr-2">
+            Mark as potentially poisonous for animals
+          </label>
+          <AlertTriangle size={16} className="text-amber-500" />
+        </div>
+      </div>
+      
+      {/* Warning message when poisonous is checked */}
+      {formData.is_poisonous && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          <div className="flex items-start">
+            <AlertTriangle size={18} className="text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
+            <p>
+              This medicine will be marked as potentially poisonous to animals.
+              Users will be warned before purchasing this product.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div>
         <label

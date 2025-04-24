@@ -39,19 +39,20 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-
-# Message Views
 class MessageListCreateView(generics.ListCreateAPIView):
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
+        if user.is_superuser:
+            # Superusers can view all messages
+            return Message.objects.all()
+        # Regular users can only view messages where they are the sender or recipient
         return Message.objects.filter(sender=user) | Message.objects.filter(recipient=user)
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
-
 
 class MessageDetailView(generics.RetrieveDestroyAPIView):
     queryset = Message.objects.all()
@@ -111,13 +112,14 @@ class AppointmentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
-            return Appointment.objects.all()  # Admins see all appointments
-        return Appointment.objects.filter(customer=user)  # Customers only see their own appointments
+        # If user is admin (role 0) or veterinarian (role 2), return all appointments
+        if user.role == 0 or user.role == 2:
+            return Appointment.objects.all().order_by('-appointment_date')
+        # For regular users (customers), only return their own appointments
+        return Appointment.objects.filter(customer=user).order_by('-appointment_date')
 
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
-
 
 
 
@@ -126,8 +128,10 @@ class VeterinarianAppointmentListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Appointment.objects.filter(veterinarian=self.request.user).order_by('-appointment_date')
-
+        print("Current user:", self.request.user)  # Debug print
+        queryset = Appointment.objects.filter(veterinarian=self.request.user)
+        print("Query results:", queryset)  # Debug print
+        return queryset.order_by('-appointment_date')
 
 class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Appointment.objects.all()

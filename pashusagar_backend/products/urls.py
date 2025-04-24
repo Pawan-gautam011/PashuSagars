@@ -22,9 +22,8 @@ urlpatterns = [
 
     # Appointments
     path('appointments/', AppointmentListCreateView.as_view(), name='appointment_list_create'),
-    path('appointments/<int:pk>/', AppointmentDetailView.as_view(), name='appointment_detail'),
+    path('appointments/<int:pk>/', AppointmentDetailUpdateView.as_view(), name='appointment_detail'),
     path('veterinarian-appointments/', VeterinarianAppointmentListView.as_view(), name='veterinarian_appointments'),
-    path('appointment/<int:pk>/', AppointmentDetailUpdateView.as_view(), name='appointment-detail-update'),
     
     #inventory
     path('inventories/<int:pk>/', ProductRestockView.as_view(), name='inventory_list_create'),

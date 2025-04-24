@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from .models import CustomUser
 from rest_framework_simplejwt.tokens import RefreshToken
 
+# User Registration Serializer
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
@@ -18,10 +19,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
+        # Default role is 1 (non-veterinarian). If a role is provided, use that one
+        role = validated_data.get('role', 1)  # Default role is 1 (non-veterinarian)
+        
         user = CustomUser.objects.create(
             email=validated_data['email'],
             username=validated_data['username'],
-            role=validated_data['role'],
+            role=role,
             phone_number=validated_data['phone_number'],
         )
         user.set_password(validated_data['password'])
@@ -29,6 +33,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+# Veterinarian Registration Serializer
 class VeterinarianRegistrationSerializer(UserRegistrationSerializer):
     specialization = serializers.CharField(required=True, allow_blank=False)
     clinic_name = serializers.CharField(required=True, allow_blank=False)
@@ -40,7 +45,8 @@ class VeterinarianRegistrationSerializer(UserRegistrationSerializer):
         specialization = validated_data.pop('specialization')
         clinic_name = validated_data.pop('clinic_name')
 
-        validated_data['role'] = 2
+        # Set the role to veterinarian (2)
+        validated_data['role'] = 2  # Veterinarian role
 
         user = super().create(validated_data)
 
@@ -50,6 +56,7 @@ class VeterinarianRegistrationSerializer(UserRegistrationSerializer):
         
         return user
 
+# Profile Serializer (for updating user details)
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
@@ -62,6 +69,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("This email is already in use.")
         return value
 
+# Change Password Serializer
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True, write_only=True)
     new_password = serializers.CharField(required=True, write_only=True, validators=[validate_password])
@@ -72,9 +80,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("Old password does not match.")
         return value
 
-from django.contrib.auth.password_validation import validate_password
-from .models import  PasswordResetOTP
-
+# Forgot Password Serializer
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -83,6 +89,7 @@ class ForgotPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("User with this email does not exist.")
         return value
 
+# Reset Password Serializer
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6)
@@ -99,6 +106,7 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("User with this email does not exist.")
         return value
 
+# User List Serializer (for displaying list of users)
 class UserListSerializer(serializers.ModelSerializer):
     role_display = serializers.SerializerMethodField()
 
@@ -117,3 +125,4 @@ class UserListSerializer(serializers.ModelSerializer):
 
     def get_role_display(self, obj):
         return obj.get_role_display()
+

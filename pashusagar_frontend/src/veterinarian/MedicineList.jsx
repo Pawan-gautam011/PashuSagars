@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import axios from "axios"
-import { Edit, Trash2, X } from "lucide-react"
+import { Edit, Trash2, X, AlertTriangle } from "lucide-react"
 import EditMedicineForm from "./EditMedicineForm"
 
 const MedicineList = () => {
@@ -115,11 +115,19 @@ const MedicineList = () => {
               className="w-full h-48 object-cover"
             />
             <div className="p-6">
-              <h3 className="text-xl font-semibold mb-2 text-gray-800">{medicine.title}</h3>
+              <div className="flex justify-between items-start">
+                <h3 className="text-xl font-semibold mb-2 text-gray-800">{medicine.title}</h3>
+                {medicine.is_poisonous && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <AlertTriangle size={12} className="mr-1" />
+                    Poisonous
+                  </span>
+                )}
+              </div>
               {/* Category section */}
               {medicine.category && (
                 <p className="text-sm text-gray-600 mb-2">
-                  Category: {medicine.category.name}
+                  Category: {medicine.category_name}
                 </p>
               )}
               <p className="text-gray-600 mb-4 line-clamp-2">{medicine.description}</p>
@@ -127,6 +135,12 @@ const MedicineList = () => {
                 <p className="text-xl font-bold text-green-600">Rs. {medicine.price}</p>
                 <p className="text-sm text-gray-500">Stock: {medicine.stock}</p>
               </div>
+              {medicine.is_poisonous && (
+                <div className="p-2 mb-4 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 flex items-start">
+                  <AlertTriangle size={14} className="text-amber-500 mr-1 mt-0.5 flex-shrink-0" />
+                  <span>This medicine is marked as potentially poisonous to animals.</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <button
                   onClick={() => handleEdit(medicine)}

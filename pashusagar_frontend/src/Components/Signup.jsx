@@ -1,36 +1,54 @@
-// React Signup Component (Already provided by you)
 import React, { useState } from "react";
 import axios from "axios";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, CheckCircle, UserPlus, ArrowRight, ShieldCheck, HelpCircle } from "lucide-react";
+import { toast } from "react-toastify";
 import Navbar from "../Components/Navbar";
+import Footer from "../Components/Footer";
 
 const Signup = () => {
-  const [username, setUsername] = useState(""); // Username State
+  const [username, setUsername] = useState(""); 
   const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState(""); // Phone Number State
+  const [phoneNumber, setPhoneNumber] = useState(""); 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState(""); // Error State
-  const [success, setSuccess] = useState(""); // Success State
+  const [error, setError] = useState(""); 
+  const [success, setSuccess] = useState(""); 
+  const [isLoading, setIsLoading] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showUsernameHelp, setShowUsernameHelp] = useState(false);
 
   const navigate = useNavigate();
+
+  // Validate username according to Django's requirements
+  const handleUsernameChange = (e) => {
+    setUsername(e.target.value);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setIsLoading(true);
 
     // Basic validation
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      setIsLoading(false);
       return;
     }
 
     if (phoneNumber.length !== 10) {
       setError("Phone number must be 10 digits.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!agreeTerms) {
+      setError("You must agree to our terms and conditions.");
+      setIsLoading(false);
       return;
     }
 
@@ -49,6 +67,7 @@ const Signup = () => {
 
       console.log(response.data);
       setSuccess("Registration successful! Redirecting to login...");
+      toast.success("Account created successfully!");
 
       setTimeout(() => {
         navigate("/login");
@@ -61,199 +80,285 @@ const Signup = () => {
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
+      toast.error("Registration failed. Please check your information.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <>
       <Navbar />
-      <div className="bg-gradient-to-b from-[#00574B] to-[#009366] flex justify-center items-center min-h-screen">
-        <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md sm:max-w-lg md:max-w-xl mt-20 mb-20">
-          <h1 className="text-2xl font-bold text-center text-[#00574B]">
-            Create Your Account
-          </h1>
-
-          {success && (
-            <div
-              className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-4"
-              role="alert"
-            >
-              <span className="block sm:inline">{success}</span>
-            </div>
-          )}
-
-          {error && (
-            <div
-              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4"
-              role="alert"
-            >
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-            {/* Username Field */}
-            <div>
-              <label
-                htmlFor="username"
-                className="block mb-2 text-sm font-medium text-[#00574B]"
-              >
-                Username
-              </label>
-              <input
-                type="text"
-                name="username"
-                id="username"
-                className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg block w-full p-3"
-                placeholder="user123a"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-
-            {/* Email Field */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block mb-2 text-sm font-medium text-[#00574B]"
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                id="email"
-                className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg block w-full p-3"
-                placeholder="usera@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
-            {/* Phone Number Field */}
-            <div>
-              <label
-                htmlFor="phoneNumber"
-                className="block mb-2 text-sm font-medium text-[#00574B]"
-              >
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                name="phoneNumber"
-                id="phoneNumber"
-                className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg block w-full p-3"
-                placeholder="1234567890"
-                required
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                pattern="[0-9]{10}"
-                title="Enter a valid 10-digit phone number"
-              />
-            </div>
-
-            {/* Password Field */}
-            <div className="relative">
-              <label
-                htmlFor="password"
-                className="block mb-2 text-sm font-medium text-[#00574B]"
-              >
-                Password
-              </label>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                id="password"
-                className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg block w-full p-3"
-                placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <div
-                className="absolute inset-y-0 right-3 top-10 flex items-center justify-center cursor-pointer"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+      
+      <div className="min-h-screen bg-gradient-to-b from-[#004d40] to-[#00695c] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#55DD4A]/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#55DD4A]/10 rounded-full blur-3xl -ml-20 -mb-20"></div>
+        
+        <div className="w-full max-w-lg relative z-10">
+          {/* Card */}
+          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="p-8 sm:p-10">
+              <div className="text-center mb-8">
+                <div className="flex justify-center">
+                  <div className="bg-[#55DD4A]/20 p-3 rounded-full mb-5">
+                    <UserPlus className="h-8 w-8 text-[#55DD4A]" />
+                  </div>
+                </div>
+                <h1 className="text-3xl font-bold text-white">Create Your Account</h1>
+                <p className="text-[#ADE1B0] mt-2">Join PashuSagar to access our services</p>
               </div>
-            </div>
+              
+              {/* Success Message */}
+              {success && (
+                <div className="bg-green-500/20 border border-green-300/30 rounded-lg p-4 mb-6 flex items-start">
+                  <CheckCircle className="text-green-300 mr-2 flex-shrink-0 mt-0.5" size={18} />
+                  <p className="text-white text-sm">{success}</p>
+                </div>
+              )}
 
-            {/* Confirm Password Field */}
-            <div className="relative">
-              <label
-                htmlFor="confirmPassword"
-                className="block mb-2 text-sm font-medium text-[#00574B]"
-              >
-                Confirm Password
-              </label>
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                id="confirmPassword"
-                className="bg-gray-100 border border-gray-300 text-gray-900 rounded-lg block w-full p-3"
-                placeholder="••••••••"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              <div
-                className="absolute inset-y-0 right-3 top-10 flex items-center justify-center cursor-pointer"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <Eye size={20} /> : <EyeOff size={20} />}
-              </div>
-            </div>
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-500/20 border border-red-300/30 rounded-lg p-4 mb-6 flex items-start">
+                  <AlertCircle className="text-red-300 mr-2 flex-shrink-0 mt-0.5" size={18} />
+                  <p className="text-white text-sm">{error}</p>
+                </div>
+              )}
 
-            {/* Terms and Conditions */}
-            <div>
-              <label className="flex items-center text-sm text-[#00574B]">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-[#009366] border-gray-300 rounded"
-                  required
-                />
-                <span className="ml-2">
-                  By creating an account, you agree to our
-                  <NavLink
-                    to="/terms"
-                    className="text-[#009366] hover:underline ml-1"
-                  >
-                    terms and conditions
-                  </NavLink>
-                  &nbsp; and
-                  <NavLink
-                    to="/privacy"
-                    className="text-[#009366] hover:underline ml-2"
-                  >
-                    privacy policy
-                  </NavLink>
-                  .
-                </span>
-              </label>
-            </div>
+              {/* Signup Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Username Field - With help text */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="username">
+                      Username
+                    </label>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowUsernameHelp(!showUsernameHelp)}
+                      className="text-white/70 hover:text-white"
+                    >
+                      <HelpCircle size={16} />
+                    </button>
+                  </div>
+                  
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      value={username}
+                      onChange={handleUsernameChange}
+                      placeholder="Letters, numbers, @/./+/-/_"
+                      pattern="^[\w.@+-]+$"
+                      title="Username may contain only letters, numbers, and @/./+/-/_ characters."
+                      required
+                      className="pl-10 w-full px-3 py-3 bg-white text-gray-800 border border-white/30 
+                      rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 
+                      focus:ring-[#55DD4A] focus:border-transparent"
+                    />
+                    <User className="absolute left-3 top-3.5 text-gray-500" size={18} />
+                  </div>
+                  
+                  {showUsernameHelp && (
+                    <div className="bg-white/10 p-3 rounded-lg mt-2 text-white/80 text-sm">
+                      <p>Username may contain only:</p>
+                      <ul className="list-disc list-inside mt-1">
+                        <li>Letters (a-z, A-Z)</li>
+                        <li>Numbers (0-9)</li>
+                        <li>Special characters: @ . + - _</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
 
-            {/* Submit Button */}
-            <div className="mt-4">
-              <button
-                type="submit"
-                className="w-full bg-[#009366] text-white font-medium rounded-lg text-sm px-5 py-2.5 hover:bg-[#00574B] focus:outline-none focus:ring-4 focus:ring-[#ADE1B0]"
-              >
-                Create Account
-              </button>
-            </div>
-          </form>
+                {/* Email Field */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="email">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="your@example.com"
+                      required
+                      className="pl-10 w-full px-3 py-3 bg-white text-gray-800 border border-white/30 
+                      rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 
+                      focus:ring-[#55DD4A] focus:border-transparent"
+                    />
+                    <Mail className="absolute left-3 top-3.5 text-gray-500" size={18} />
+                  </div>
+                </div>
 
-          {/* Redirect to Login */}
-          <p className="text-sm text-center text-gray-500 mt-4">
-            Already have an account?{" "}
-            <NavLink to="/login" className="text-[#009366] hover:underline">
-              Login
-            </NavLink>
-          </p>
+                {/* Phone Number Field */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="phoneNumber">
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="1234567890"
+                      pattern="[0-9]{10}"
+                      title="Enter a valid 10-digit phone number"
+                      required
+                      className="pl-10 w-full px-3 py-3 bg-white text-gray-800 border border-white/30 
+                      rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 
+                      focus:ring-[#55DD4A] focus:border-transparent"
+                    />
+                    <Phone className="absolute left-3 top-3.5 text-gray-500" size={18} />
+                  </div>
+                </div>
+
+                {/* Two columns for password fields on larger screens */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Password Field */}
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="password">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        name="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        className="pl-10 w-full px-3 py-3 bg-white text-gray-800 border border-white/30 
+                        rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 
+                        focus:ring-[#55DD4A] focus:border-transparent"
+                      />
+                      <Lock className="absolute left-3 top-3.5 text-gray-500" size={18} />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3.5 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password Field */}
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="confirmPassword">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        className="pl-10 w-full px-3 py-3 bg-white text-gray-800 border border-white/30 
+                        rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 
+                        focus:ring-[#55DD4A] focus:border-transparent"
+                      />
+                      <Lock className="absolute left-3 top-3.5 text-gray-500" size={18} />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-3.5 text-gray-500 hover:text-gray-700"
+                      >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Terms and Conditions */}
+                <div>
+                  <label className="flex items-center text-sm text-white">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 text-[#55DD4A] bg-white border-gray-300 rounded focus:ring-[#55DD4A]"
+                      required
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                    />
+                    <span className="ml-2">
+                      By creating an account, you agree to our
+                      <NavLink
+                        to="/terms"
+                        className="text-[#55DD4A] hover:underline ml-1"
+                      >
+                        terms and conditions
+                      </NavLink>
+                      &nbsp;and
+                      <NavLink
+                        to="/privacy"
+                        className="text-[#55DD4A] hover:underline ml-1"
+                      >
+                        privacy policy
+                      </NavLink>
+                      .
+                    </span>
+                  </label>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full px-4 py-3 text-white font-medium rounded-lg shadow mt-6
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#55DD4A] flex items-center justify-center ${
+                    isLoading
+                      ? "bg-[#55DD4A]/50 cursor-not-allowed"
+                      : "bg-[#55DD4A] hover:bg-[#4BC940]"
+                  }`}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      Create Account <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </button>
+
+                {/* Login Link */}
+                <div className="text-center mt-6">
+                  <p className="text-white">
+                    Already have an account?{" "}
+                    <NavLink to="/login" className="text-[#55DD4A] font-medium hover:underline">
+                      Sign in
+                    </NavLink>
+                  </p>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          {/* Security Note */}
+          <div className="mt-6 text-center">
+            <p className="text-white/70 text-sm flex items-center justify-center">
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Your information is encrypted and protected.
+            </p>
+          </div>
         </div>
       </div>
+      
+      <Footer />
     </>
   );
 };

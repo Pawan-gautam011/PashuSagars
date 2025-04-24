@@ -22,3 +22,17 @@ class MarkNotificationAsReadView(generics.UpdateAPIView):
         notification.is_read = True
         notification.save()
         return Response({"detail": "Notification marked as read."})
+
+
+
+class DeleteNotificationView(generics.DestroyAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        notification = self.get_object()
+        notification.delete()
+        return Response({"detail": "Notification deleted."})

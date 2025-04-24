@@ -1,44 +1,29 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 
 const Breadcrumbs = ({ items }) => {
-  Breadcrumbs.propTypes = {
-    items: PropTypes.arrayOf(
-      PropTypes.shape({
-        label: PropTypes.string.isRequired,
-        path: PropTypes.string.isRequired,
-      })
-    ).isRequired,
-  };
-
   return (
-    <nav className="breadcrumbs px-4 sm:px-6 lg:px-20">
-      <ol className="breadcrumb-items flex space-x-2 text-sm text-gray-600">
+    <nav aria-label="Breadcrumb">
+      <ol className="flex flex-wrap items-center text-sm">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
+          
           return (
-            <li
-              key={index}
-              className={`breadcrumb-item ${
-                isLast ? "font-semibold text-gray-500" : ""
-              }`}
-              aria-current={isLast ? "page" : undefined}
-            >
+            <li key={index} className="flex items-center">
+              {index > 0 && (
+                <ChevronRight size={16} className="mx-2 text-gray-500" />
+              )}
+              
               {isLast ? (
-                item.label
+                <span className="font-medium text-[#004D40]">{item.label}</span>
               ) : (
-                <>
-                  <Link
-                    to={item.path}
-                    className="text-white hover:text-green-600 transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                  <span className="breadcrumb-separator mx-2 text-gray-200">
-                    /
-                  </span>
-                </>
+                <Link 
+                  to={item.path} 
+                  className="text-gray-700 hover:text-[#004D40] hover:underline font-medium"
+                >
+                  {item.label}
+                </Link>
               )}
             </li>
           );

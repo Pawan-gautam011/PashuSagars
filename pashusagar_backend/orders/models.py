@@ -1,11 +1,14 @@
-# orders/models.py
 from django.db import models
 from django.conf import settings
 from products.models import Product
+from django.db import models
+
 
 class Order(models.Model):
     PAYMENT_STATUS_CHOICES = (
         ('Pending', 'Pending'),
+        ('Accepted', 'Accepted'),
+        ('Declined', 'Declined'),
         ('Completed', 'Completed'),
         ('Failed', 'Failed'),
         ('Refunded', 'Refunded'),
@@ -27,22 +30,44 @@ class Order(models.Model):
     payment_method = models.CharField(
         max_length=20, choices=PAYMENT_METHOD_CHOICES, null=True, blank=True
     )
-
-    # Store Khalti pidx if you want server-to-server verification via pidx
+    
+    # Store Khalti pidx for payment verification
     khalti_pidx = models.CharField(max_length=100, unique=True, null=True, blank=True)
 
-    #
-    # SHIPPING FIELDS
-    #
+    # Shipping fields
     shipping_name = models.CharField(max_length=100, blank=True, null=True)
     shipping_phone = models.CharField(max_length=20, blank=True, null=True)
     shipping_address = models.TextField(blank=True, null=True)
     shipping_city = models.CharField(max_length=50, blank=True, null=True)
     shipping_state = models.CharField(max_length=50, blank=True, null=True)
     shipping_zip = models.CharField(max_length=20, blank=True, null=True)
+    shipping_email = models.EmailField(max_length=254, blank=True, null=True)  
 
+    # For prescription uploads
+    prescription_file = models.FileField(upload_to='prescriptions/', null=True, blank=True)
+    
     def __str__(self):
         return f"Order {self.id} by {self.user.username}"
+    
+    @property
+    def status(self):
+        """
+        This property helps maintain compatibility with the frontend
+        which might be looking for a 'status' field instead of 'payment_status'
+        """
+        return self.payment_status
+    
+    @property
+    def total(self):
+        """
+        Calculate the total order amount including shipping
+        """
+        items_total = sum(
+            item.product.price * item.quantity for item in self.items.all()
+        )
+        shipping_cost = 100  # Default shipping cost
+        return items_total + shipping_cost
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(

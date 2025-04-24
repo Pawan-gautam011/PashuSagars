@@ -1,16 +1,27 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 
 function AdminMessage() {
   const [doctors, setDoctors] = useState([]);
   const [allMessages, setAllMessages] = useState([]);
+  const [doctorMessage, setDoctorMessage] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [doctorMessages, setDoctorMessages] = useState([]);
-  const [replyContent, setReplyContent] = useState(""); // State for reply input
+  const [messageOfSpecificUser, setMessageOfSpecificUser] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [replyingToMessageId, setReplyingToMessageId] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   // Fetch all veterinarians (doctors)
   const getDoctors = async () => {
     const token = localStorage.getItem("token");
+    if (!token) {
+      setError("No authentication token found");
+      return;
+    }
 
+    setLoading(true);
     try {
       const response = await fetch("http://127.0.0.1:8000/api/auth/users/", {
         headers: {
@@ -23,22 +34,27 @@ function AdminMessage() {
       }
 
       const data = await response.json();
-
-      // Filter users with role_display === "Veterinarian"
       const filteredData = data.filter(
         (user) => user.role_display === "Veterinarian"
       );
       setDoctors(filteredData);
-      console.log("Filtered Veterinarians:", filteredData);
     } catch (error) {
       console.error("Error fetching doctors:", error);
+      setError(error.message || "An unknown error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Fetch all messages for the user
+  // Fetch all messages
   const getMessages = async () => {
     const token = localStorage.getItem("token");
-    console.log("token", token);
+    if (!token) {
+      setError("No authentication token found");
+      return;
+    }
+
+    setLoading(true);
     try {
       const response = await fetch("http://127.0.0.1:8000/api/messages/", {
         headers: {
@@ -51,36 +67,58 @@ function AdminMessage() {
       }
 
       const data = await response.json();
-      console.log("Messages>>>>>>>",data)
       setAllMessages(data);
-      console.log("All Messages", data);
+      console.log(data)
     } catch (error) {
       console.error("Error fetching messages:", error);
+      setError(error.message || "An unknown error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Filter messages for the selected doctor
-  useEffect(() => {
-    if (selectedDoctor) {
-      const filteredMessages = allMessages.filter(
-        (message) =>
-          message.sender === selectedDoctor.id || message.recipient === selectedDoctor.id
-      );
-      setDoctorMessages(filteredMessages);
-    }
-  }, [selectedDoctor, allMessages]);
+  // Filter messages for a selected doctor
+  const filterDoctorMessage = (doctorId) => {
+    setSelectedDoctor(doctorId);
+    setSelectedUserId(null);
 
-  // Function to send a reply
-  const sendReply = async () => {
-    if (!replyContent.trim() || !selectedDoctor) return; // Ensure there's content and a selected doctor
+    const filteredData = allMessages.filter(
+      (message) => message.sender === doctorId || message.recipient === doctorId
+    );
+    setDoctorMessage(filteredData);
+    setMessageOfSpecificUser([]);
+  };
 
+  const filterMessageForSpecificUser = (userId) => {
+    setSelectedUserId(userId);
+    const messages = doctorMessage.filter((item) => {
+      return item.sender === userId || item.recipient === userId;
+    });
+    setMessageOfSpecificUser(messages);
+  };
+
+  // Handle reply submission
+  const handleReply = async (recipientId, message) => {
+    console.log("message>>>", message);
     const token = localStorage.getItem("token");
-    const newMessage = {
-      sender: selectedDoctor.id, // Assuming the doctor is the sender
-      recipient: selectedDoctor.id, // Assuming the recipient is the same doctor (adjust as needed)
-      content: replyContent,
-    };
+    const userId = localStorage.getItem("user_id");
 
+    if (!token || !userId) {
+      setError("Authentication information is missing");
+      return;
+    }
+
+    if (!replyContent.trim()) {
+      alert("Please enter a reply message.");
+      return;
+    }
+
+    setLoading(true);
+    console.log("MY",{
+      reply: replyContent,
+      sender: userId,
+      recipient: message.sender,
+    });
     try {
       const response = await fetch("http://127.0.0.1:8000/api/messages/", {
         method: "POST",
@@ -88,108 +126,171 @@ function AdminMessage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newMessage),
+        body: JSON.stringify({
+          sender: Number(userId),
+          recipient: message.sender,
+          content: replyContent,
+        }),
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log("Reply sent:", data);
+      await response.json();
+      await getMessages();
 
-      // Update the message list with the new reply
-      setAllMessages([...allMessages, data]);
-      setReplyContent(""); // Clear the reply input
+      if (selectedUserId) {
+        filterMessageForSpecificUser(selectedUserId);
+      }
+
+      setReplyContent("");
+      setReplyingToMessageId(null);
     } catch (error) {
       console.error("Error sending reply:", error);
+      setError(error.message || "An unknown error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    getMessages();
     getDoctors();
+    getMessages();
   }, []);
 
+  if (loading) return <div className="p-4 text-center">Loading...</div>;
+  if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
+
   return (
-    <div className="flex h-screen">
-      {/* Doctors List */}
-      <div className="w-1/4 border-r border-gray-200 bg-gray-50 p-4">
-        <h3 className="text-lg font-semibold mb-4">Doctors</h3>
-        <ul>
-          {doctors.map((doctor) => (
-            <li
-              key={doctor.id}
-              onClick={() => setSelectedDoctor(doctor)}
-              className={`p-3 cursor-pointer rounded-lg ${
-                selectedDoctor?.id === doctor.id
-                  ? "bg-blue-100"
-                  : "hover:bg-gray-100"
-              }`}
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">Doctors</h1>
+      <ul className="flex flex-wrap gap-2 mb-8">
+        {doctors.map((doctor) => (
+          <li key={doctor.id}>
+            <button
+              onClick={() => filterDoctorMessage(doctor.id)}
+              className={`px-4 py-2 rounded-md text-white ${
+                selectedDoctor === doctor.id ? "bg-green-500" : "bg-blue-500"
+              } hover:opacity-90 transition-opacity`}
             >
               {doctor.username}
-            </li>
-          ))}
-        </ul>
-      </div>
+            </button>
+          </li>
+        ))}
+      </ul>
 
-      {/* Messages Section */}
-      <div className="w-3/4 p-4 bg-white">
-        <h3 className="text-lg font-semibold mb-4">Messages</h3>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Messages</h2>
+
         {selectedDoctor ? (
-          <div className="flex flex-col h-full">
-            {/* Messages List */}
-            <div className="flex-1 overflow-y-auto mb-4">
-              <h4 className="text-md font-medium mb-4">
-                Messages with {selectedDoctor.username}
-              </h4>
-              <div className="space-y-4">
-                {doctorMessages.map((message) => (
+          doctorMessage.length > 0 ? (
+            <div className="space-y-4">
+              {doctorMessage
+                .filter(
+                  (message) =>
+                    !selectedUserId ||
+                    message.sender === selectedUserId ||
+                    message.recipient === selectedUserId
+                )
+                .map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${
-                      message.sender === selectedDoctor.id
-                        ? "justify-end" // Your sent messages on the right
-                        : "justify-start" // Received messages on the left
-                    }`}
+                    className="border border-gray-200 rounded-lg p-4"
                   >
-                    <div
-                      className={`max-w-[70%] p-3 rounded-lg ${
-                        message.sender === selectedDoctor.id
-                          ? "bg-blue-500 text-white" // Your sent messages
-                          : "bg-gray-200 text-gray-800" // Received messages
-                      }`}
-                    >
-                      <p>{message.content}</p>
+                    <div className="mb-3">
+                      <button
+                        onClick={() => {
+                          const userId =
+                            message.sender === selectedDoctor
+                              ? message.recipient
+                              : message.sender;
+                          filterMessageForSpecificUser(userId);
+                        }}
+                        className="text-blue-500 hover:underline cursor-pointer"
+                      >
+                        {message.sender === selectedDoctor
+                          ? message.recipient_name
+                          : message.sender_name}
+                      </button>
                     </div>
+                    <div>
+                      <p>
+                        <span className="font-medium">From:</span>{" "}
+                        {message.sender_name}
+                      </p>
+                      <p>
+                        <span className="font-medium">To:</span>{" "}
+                        {message.recipient_name}
+                      </p>
+                      <p className="my-2 p-2 bg-gray-50 rounded">
+                        {message.content}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(message.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+
+                    {replyingToMessageId === message.id && (
+                      <div className="mt-4">
+                        <textarea
+                          value={replyContent}
+                          onChange={(e) => setReplyContent(e.target.value)}
+                          placeholder="Type your reply here..."
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          rows="3"
+                        />
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() =>
+                              handleReply(
+                                message.sender === selectedDoctor
+                                  ? message.recipient
+                                  : message.sender,
+                                message
+                              )
+                            }
+                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                          >
+                            Send Reply
+                          </button>
+                          <button
+                            onClick={() => setReplyingToMessageId(null)}
+                            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {replyingToMessageId !== message.id && (
+                      <button
+                        onClick={() => setReplyingToMessageId(message.id)}
+                        className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                      >
+                        Reply
+                      </button>
+                    )}
                   </div>
                 ))}
-              </div>
             </div>
-
-            {/* Reply Input Field */}
-            <div className="mt-4">
-              <textarea
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                placeholder="Type your reply..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="3"
-              />
-              <button
-                onClick={sendReply}
-                className="mt-2 w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Send Reply
-              </button>
-            </div>
-          </div>
+          ) : (
+            <p className="text-gray-500">No messages found for this doctor.</p>
+          )
         ) : (
-          <p className="text-gray-500">Select a doctor to view messages</p>
+          <p className="text-gray-500">
+            Please select a doctor to view messages.
+          </p>
         )}
       </div>
     </div>
   );
 }
+
+// Optional: PropTypes for runtime type checking
+AdminMessage.propTypes = {
+  // Add prop type validations if needed
+};
 
 export default AdminMessage;

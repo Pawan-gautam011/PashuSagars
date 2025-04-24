@@ -1,6 +1,7 @@
+# models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from django.core.validators import RegexValidator
 
 class CustomUser(AbstractUser):
     USER_ROLES = (
@@ -8,6 +9,24 @@ class CustomUser(AbstractUser):
         (1, 'User'),
         (2, 'Veterinarian'),
     )
+    
+    # Custom username field with more permissive validation
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        help_text='Required. 150 characters or fewer.',
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+$',  # This keeps Django's default pattern
+                message='Username may contain only letters, numbers, and @/./+/-/_ characters.',
+                code='invalid_username'
+            ),
+        ],
+        error_messages={
+            'unique': "A user with that username already exists.",
+        },
+    )
+    
     email = models.EmailField(unique=True)
     role = models.PositiveSmallIntegerField(choices=USER_ROLES, default=1)
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
@@ -24,6 +43,7 @@ class CustomUser(AbstractUser):
     def is_veterinarian(self):
         return self.role == 2
 
+# Keep the rest of your models.py file unchanged
 from django.utils import timezone
 from datetime import timedelta
 

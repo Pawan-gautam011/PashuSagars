@@ -16,7 +16,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'category', 'category_name', 'title', 'description',
-            'stock', 'price', 'images', 'created_by', 'created_by_name', 'created_at'
+            'stock', 'price', 'images', 'created_by', 'created_by_name', 'created_at', 'is_poisonous'
         ]
         read_only_fields = ['created_by', 'created_at']
 
@@ -35,12 +35,14 @@ class MessageSerializer(serializers.ModelSerializer):
 # Appointment Serializer
 class AppointmentSerializer(serializers.ModelSerializer):
     customer_name = serializers.ReadOnlyField(source='customer.username')
+    veterinarian_name = serializers.ReadOnlyField(source='veterinarian.username', allow_null=True)
 
     class Meta:
         model = Appointment
         fields = [
-            'id', 'customer', 'customer_name', 'first_name', 'last_name',
-            'email', 'appointment_date', 'description', 'is_confirmed', 'status'
+            'id', 'customer', 'customer_name', 'veterinarian', 'veterinarian_name',
+            'first_name', 'last_name', 'email', 'phone_number', 'pet_name',
+            'appointment_date', 'description', 'is_confirmed', 'status'
         ]
         read_only_fields = ['id', 'customer', 'customer_name']
 
