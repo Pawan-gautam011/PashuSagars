@@ -10,15 +10,15 @@ class CustomUser(AbstractUser):
         (2, 'Veterinarian'),
     )
     
-    # Custom username field with more permissive validation
+
     username = models.CharField(
         max_length=150,
         unique=True,
-        help_text='Required. 150 characters or fewer.',
+        help_text='Required. 150 characters or fewer. Letters, spaces, and common punctuation allowed.',
         validators=[
             RegexValidator(
-                regex=r'^[\w.@+-]+$',  # This keeps Django's default pattern
-                message='Username may contain only letters, numbers, and @/./+/-/_ characters.',
+                regex=r'^[a-zA-Z0-9\s\.,\-_]+$', 
+                message='Username may contain only letters, numbers, spaces, and basic punctuation (. , - _).',
                 code='invalid_username'
             ),
         ],
@@ -26,6 +26,7 @@ class CustomUser(AbstractUser):
             'unique': "A user with that username already exists.",
         },
     )
+    
     
     email = models.EmailField(unique=True)
     role = models.PositiveSmallIntegerField(choices=USER_ROLES, default=1)

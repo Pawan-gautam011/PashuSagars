@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../Components/Navbar";
 import axios from "axios";
+import { ChevronRight, Home } from "lucide-react";
 
 const ChangePassword = () => {
   const [formData, setFormData] = useState({
@@ -51,7 +52,7 @@ const ChangePassword = () => {
       );
       toast.success("Password updated successfully!");
       setTimeout(() => {
-        navigate("/dashboard"); // or wherever you want to redirect after success
+        navigate("/LoginUserpage"); // or wherever you want to redirect after success
       }, 2000);
     } catch (error) {
       console.error(error);
@@ -66,13 +67,53 @@ const ChangePassword = () => {
       }
     }
   };
+  
+  const EnhancedBreadcrumbs = ({ items }) => {
+    return (
+      <nav className="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-6">
+        <ol className="flex flex-wrap items-center">
+          {items.map((item, index) => {
+            const isLast = index === items.length - 1;
+            return (
+              <li key={index} className="flex items-center">
+                {index === 0 && <Home size={16} className="text-white mr-2" />}
+                
+                {isLast ? (
+                  <span className="font-medium text-[#55DD4A]">{item.label}</span>
+                ) : (
+                  <>
+                    <a 
+                      href={item.path} 
+                      className="text-white hover:text-[#ADE1B0] transition-colors"
+                    >
+                      {item.label}
+                    </a>
+                    <ChevronRight size={16} className="mx-2 text-white/60" />
+                  </>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+    );
+  };
+  
+  const breadcrumbItems = [
+    { label: "Home", path: "/" },
+    { label: "Change Password", path: "/changepassword" },
+  ];
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C] py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
+      <div className="min-h-screen bg-gradient-to-b from-[#004d40] to-[#00695c] pt-16 pb-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="container mx-auto">
+            <EnhancedBreadcrumbs items={breadcrumbItems} />
+          </div>
+          
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg px-8 pt-6 pb-8 mb-4">
             <div className="mb-6 text-center">
               <h2 className="text-2xl font-bold text-gray-900">Change Password</h2>
               <p className="mt-2 text-sm text-gray-600">

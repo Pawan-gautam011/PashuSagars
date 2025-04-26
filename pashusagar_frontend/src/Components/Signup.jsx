@@ -22,7 +22,6 @@ const Signup = () => {
 
   const navigate = useNavigate();
 
-  // Validate username according to Django's requirements
   const handleUsernameChange = (e) => {
     setUsername(e.target.value);
   };
@@ -32,20 +31,32 @@ const Signup = () => {
     setError("");
     setSuccess("");
     setIsLoading(true);
-
+  
     // Basic validation
+    if (!username.trim()) {
+      setError("Username is required.");
+      setIsLoading(false);
+      return;
+    }
+  
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       setIsLoading(false);
       return;
     }
-
+  
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      setIsLoading(false);
+      return;
+    }
+  
     if (phoneNumber.length !== 10) {
       setError("Phone number must be 10 digits.");
       setIsLoading(false);
       return;
     }
-
+  
     if (!agreeTerms) {
       setError("You must agree to our terms and conditions.");
       setIsLoading(false);
@@ -91,12 +102,10 @@ const Signup = () => {
       <Navbar />
       
       <div className="min-h-screen bg-gradient-to-b from-[#004d40] to-[#00695c] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#55DD4A]/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#55DD4A]/10 rounded-full blur-3xl -ml-20 -mb-20"></div>
         
         <div className="w-full max-w-lg relative z-10">
-          {/* Card */}
           <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-8 sm:p-10">
               <div className="text-center mb-8">
@@ -109,7 +118,6 @@ const Signup = () => {
                 <p className="text-[#ADE1B0] mt-2">Join PashuSagar to access our services</p>
               </div>
               
-              {/* Success Message */}
               {success && (
                 <div className="bg-green-500/20 border border-green-300/30 rounded-lg p-4 mb-6 flex items-start">
                   <CheckCircle className="text-green-300 mr-2 flex-shrink-0 mt-0.5" size={18} />
@@ -117,7 +125,6 @@ const Signup = () => {
                 </div>
               )}
 
-              {/* Error Message */}
               {error && (
                 <div className="bg-red-500/20 border border-red-300/30 rounded-lg p-4 mb-6 flex items-start">
                   <AlertCircle className="text-red-300 mr-2 flex-shrink-0 mt-0.5" size={18} />
@@ -125,9 +132,7 @@ const Signup = () => {
                 </div>
               )}
 
-              {/* Signup Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Username Field - With help text */}
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="username">
@@ -149,9 +154,7 @@ const Signup = () => {
                       name="username"
                       value={username}
                       onChange={handleUsernameChange}
-                      placeholder="Letters, numbers, @/./+/-/_"
-                      pattern="^[\w.@+-]+$"
-                      title="Username may contain only letters, numbers, and @/./+/-/_ characters."
+                      placeholder="Enter your username"
                       required
                       className="pl-10 w-full px-3 py-3 bg-white text-gray-800 border border-white/30 
                       rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 
@@ -162,17 +165,11 @@ const Signup = () => {
                   
                   {showUsernameHelp && (
                     <div className="bg-white/10 p-3 rounded-lg mt-2 text-white/80 text-sm">
-                      <p>Username may contain only:</p>
-                      <ul className="list-disc list-inside mt-1">
-                        <li>Letters (a-z, A-Z)</li>
-                        <li>Numbers (0-9)</li>
-                        <li>Special characters: @ . + - _</li>
-                      </ul>
+                      <p>Username can contain letters, numbers, spaces, and basic punctuation (. , - _)</p>
                     </div>
                   )}
                 </div>
 
-                {/* Email Field */}
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="email">
                     Email
@@ -194,7 +191,6 @@ const Signup = () => {
                   </div>
                 </div>
 
-                {/* Phone Number Field */}
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="phoneNumber">
                     Phone Number
@@ -218,9 +214,7 @@ const Signup = () => {
                   </div>
                 </div>
 
-                {/* Two columns for password fields on larger screens */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Password Field */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="password">
                       Password
@@ -249,7 +243,6 @@ const Signup = () => {
                     </div>
                   </div>
 
-                  {/* Confirm Password Field */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium text-[#ADE1B0]" htmlFor="confirmPassword">
                       Confirm Password
@@ -279,7 +272,6 @@ const Signup = () => {
                   </div>
                 </div>
 
-                {/* Terms and Conditions */}
                 <div>
                   <label className="flex items-center text-sm text-white">
                     <input
@@ -309,7 +301,6 @@ const Signup = () => {
                   </label>
                 </div>
 
-                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -335,7 +326,6 @@ const Signup = () => {
                   )}
                 </button>
 
-                {/* Login Link */}
                 <div className="text-center mt-6">
                   <p className="text-white">
                     Already have an account?{" "}
@@ -348,7 +338,6 @@ const Signup = () => {
             </div>
           </div>
           
-          {/* Security Note */}
           <div className="mt-6 text-center">
             <p className="text-white/70 text-sm flex items-center justify-center">
               <ShieldCheck className="h-4 w-4 mr-2" />

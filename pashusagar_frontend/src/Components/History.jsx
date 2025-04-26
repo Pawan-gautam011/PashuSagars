@@ -4,7 +4,7 @@ import axios from 'axios';
 import Breadcrumbs from './BreadCrumbs';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { Calendar, Package2, AlertCircle } from 'lucide-react';
+import { Calendar, Package2, AlertCircle, Home, ChevronRight } from 'lucide-react';
 
 const History = () => {
   // Default active tab set to "both" to display both orders and appointments initially.
@@ -14,6 +14,37 @@ const History = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const EnhancedBreadcrumbs = ({ items }) => {
+    return (
+      <nav className="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-6">
+        <ol className="flex flex-wrap items-center">
+          {items.map((item, index) => {
+            const isLast = index === items.length - 1;
+            return (
+              <li key={index} className="flex items-center">
+                {index === 0 && <Home size={16} className="text-white mr-2" />}
+                
+                {isLast ? (
+                  <span className="font-medium text-[#55DD4A]">{item.label}</span>
+                ) : (
+                  <>
+                    <a 
+                      href={item.path} 
+                      className="text-white hover:text-[#ADE1B0] transition-colors"
+                    >
+                      {item.label}
+                    </a>
+                    <ChevronRight size={16} className="mx-2 text-white/60" />
+                  </>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+    );
+  };
+  
   const breadcrumbItems = [
     { label: "Home", path: "/" },
     { label: "History", path: "/history" },
@@ -269,10 +300,11 @@ const History = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C]">
-      <Navbar />
-      <div className="container mx-auto px-4 pt-16 pb-20">
-        <Breadcrumbs items={breadcrumbItems} />
+    <div>
+      <Navbar/>
+    <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C] pt-16 pb-16">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <EnhancedBreadcrumbs items={breadcrumbItems} />
 
         <div className="text-center mb-12">
           <h2 className="text-[#55DD4A] text-5xl font-bold mb-4">History</h2>
@@ -511,6 +543,7 @@ const History = () => {
         )}
       </div>
       <Footer />
+    </div>
     </div>
   );
 };

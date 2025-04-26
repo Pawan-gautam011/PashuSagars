@@ -4,6 +4,7 @@ import Navbar from "../Components/Navbar";
 import axios from "axios";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Home, ChevronRight } from "lucide-react";
 
 const UpdateProfile = () => {
   const initialState = {
@@ -15,6 +16,43 @@ const UpdateProfile = () => {
 
   const [profile, setProfile] = useState(initialState);
   const navigate = useNavigate();
+
+  // Breadcrumb component implementation
+  const EnhancedBreadcrumbs = ({ items }) => {
+    return (
+      <nav className="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-6">
+        <ol className="flex flex-wrap items-center">
+          {items.map((item, index) => {
+            const isLast = index === items.length - 1;
+            return (
+              <li key={index} className="flex items-center">
+                {index === 0 && <Home size={16} className="text-white mr-2" />}
+                
+                {isLast ? (
+                  <span className="font-medium text-[#55DD4A]">{item.label}</span>
+                ) : (
+                  <>
+                    <a 
+                      href={item.path} 
+                      className="text-white hover:text-[#ADE1B0] transition-colors"
+                    >
+                      {item.label}
+                    </a>
+                    <ChevronRight size={16} className="mx-2 text-white/60" />
+                  </>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+    );
+  };
+  
+  const breadcrumbItems = [
+    { label: "Home", path: "/" },
+    { label: "Update Profile", path: "/updateprofile" },
+  ];
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -106,118 +144,124 @@ const UpdateProfile = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C] py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto">
-          <div className="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold text-gray-900">Update Profile</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Manage your account information
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-5">
-              <div className="flex justify-center mb-6">
-                {profile.profile_image && (
-                  <div className="relative">
-                    <img
-                      src={
-                        typeof profile.profile_image === 'string'
-                          ? profile.profile_image
-                          : URL.createObjectURL(profile.profile_image)
-                      }
-                      alt="Profile Preview"
-                      className="h-24 w-24 object-cover rounded-full border-4 border-[#1F2937]"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label 
-                  className="block text-sm font-medium text-gray-700 mb-1" 
-                  htmlFor="username"
-                >
-                  Username
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  id="username"
-                  value={profile.username}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
-                  placeholder="Enter your username"
-                  required
-                />
-              </div>
-
-              <div>
-                <label 
-                  className="block text-sm font-medium text-gray-700 mb-1" 
-                  htmlFor="email"
-                >
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  id="email"
-                  value={profile.email}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-
-              <div>
-                <label 
-                  className="block text-sm font-medium text-gray-700 mb-1" 
-                  htmlFor="phone_number"
-                >
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  name="phone_number"
-                  id="phone_number"
-                  value={profile.phone_number}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
-                  placeholder="Enter your phone number"
-                />
-              </div>
-
-              <div>
-                <label 
-                  className="block text-sm font-medium text-gray-700 mb-1" 
-                  htmlFor="profile_image"
-                >
-                  Profile Image
-                </label>
-                <input
-                  type="file"
-                  name="profile_image"
-                  id="profile_image"
-                  onChange={handleFileChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-white hover:file:bg-[#374151]"
-                  accept="image/*"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  Maximum file size: 10MB
+      <div className="min-h-screen bg-gradient-to-b from-[#004d40] to-[#00695c] pt-16 pb-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="container mx-auto">
+            <EnhancedBreadcrumbs items={breadcrumbItems} />
+          </div>
+          
+          <div className="max-w-md mx-auto">
+            <div className="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
+              <div className="mb-6 text-center">
+                <h2 className="text-2xl font-bold text-gray-900">Update Profile</h2>
+                <p className="mt-2 text-sm text-gray-600">
+                  Manage your account information
                 </p>
               </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full bg-[#60dd57] text-white py-2 px-4 rounded-md hover:bg-[#41d636] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1F2937] transition-colors duration-200"
-                >
-                  Update Profile
-                </button>
-              </div>
-            </form>
+              <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-5">
+                <div className="flex justify-center mb-6">
+                  {profile.profile_image && (
+                    <div className="relative">
+                      <img
+                        src={
+                          typeof profile.profile_image === 'string'
+                            ? profile.profile_image
+                            : URL.createObjectURL(profile.profile_image)
+                        }
+                        alt="Profile Preview"
+                        className="h-24 w-24 object-cover rounded-full border-4 border-[#1F2937]"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label 
+                    className="block text-sm font-medium text-gray-700 mb-1" 
+                    htmlFor="username"
+                  >
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    name="username"
+                    id="username"
+                    value={profile.username}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
+                    placeholder="Enter your username"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label 
+                    className="block text-sm font-medium text-gray-700 mb-1" 
+                    htmlFor="email"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    value={profile.email}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label 
+                    className="block text-sm font-medium text-gray-700 mb-1" 
+                    htmlFor="phone_number"
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    name="phone_number"
+                    id="phone_number"
+                    value={profile.phone_number}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+
+                <div>
+                  <label 
+                    className="block text-sm font-medium text-gray-700 mb-1" 
+                    htmlFor="profile_image"
+                  >
+                    Profile Image
+                  </label>
+                  <input
+                    type="file"
+                    name="profile_image"
+                    id="profile_image"
+                    onChange={handleFileChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#009366] text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1F2937] file:text-white hover:file:bg-[#374151]"
+                    accept="image/*"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Maximum file size: 10MB
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full bg-[#55DD4A] text-white py-2 px-4 rounded-md hover:bg-[#41d636] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1F2937] transition-colors duration-200"
+                  >
+                    Update Profile
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>

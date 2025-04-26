@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { 
   PawPrint, 
   MoveRight, 
@@ -9,7 +9,9 @@ import {
   ChevronRight, 
   ChevronLeft, 
   Star,
-  ArrowRight
+  ArrowRight,
+  Clock,
+  CalendarDays
 } from "lucide-react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -35,7 +37,33 @@ import FAQS from "../Components/FAQS";
 
 const UserPage = () => {
   const [activeFeature, setActiveFeature] = useState(0);
+  const [blogs, setBlogs] = useState([]);
+  const [loadingBlogs, setLoadingBlogs] = useState(false);
+  const [blogError, setBlogError] = useState(null);
+  const [showAllBlogs, setShowAllBlogs] = useState(false)
   const sliderRef = useRef(null);
+
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      setLoadingBlogs(true);
+      try {
+        const response = await fetch("http://127.0.0.1:8000/api/blogs/");
+        if (!response.ok) {
+          throw new Error('Failed to fetch blogs');
+        }
+        const data = await response.json();
+        setBlogs(data);
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+        setBlogError(error.message);
+      } finally {
+        setLoadingBlogs(false);
+      }
+    };
+
+    fetchBlogs();
+  }, []);
 
   // Features for the services section
   const features = [
@@ -179,6 +207,104 @@ const UserPage = () => {
     }, 7000);
     return () => clearInterval(interval);
   }, []);
+
+  const renderBlogSection = () => (
+    <section className="py-16 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <span className="text-[#55DD4A] font-medium text-sm uppercase tracking-wider">Latest News</span>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-2 mb-4">
+            Pet Care Blog
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Stay updated with the latest pet care tips and news
+          </p>
+        </div>
+
+        {loadingBlogs ? (
+          <div className="text-center py-12">
+            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-[#ADE1B0] border-t-transparent"></div>
+            <p className="mt-4 text-[#004D40]">Loading articles...</p>
+          </div>
+        ) : blogError ? (
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4">{blogError}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-6 py-2 bg-[#55DD4A] text-white rounded-lg hover:bg-[#4BC940] transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : blogs.length === 0 ? (
+          <div className="text-center py-12">
+            <h3 className="text-xl text-[#004D40] mb-2">No articles found</h3>
+            <p className="text-gray-600 mb-4">Check back later for new pet care content</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {(showAllBlogs ? blogs : blogs.slice(0, 3)).map((blog) => (
+                <div 
+                  key={blog.id} 
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  <div className="h-48 overflow-hidden">
+                    <img 
+                      src={blog.image} 
+                      alt={blog.title} 
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2 py-1 bg-[#55DD4A]/10 text-[#55DD4A] text-xs font-medium rounded">
+                        {blog.category_name}
+                      </span>
+                      <span className="text-gray-400 text-sm">•</span>
+                      <div className="flex items-center text-gray-500 text-sm">
+                        <Clock className="mr-1" size={14} />
+                        <span>5 min read</span>
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">{blog.title}</h3>
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {blog.description.substring(0, 100)}...
+                    </p>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <CalendarDays className="mr-1" size={14} />
+                        <span>{new Date().toLocaleDateString()}</span>
+                      </div>
+                      <Link
+                        to={`/singleblog/${blog.id}`}
+                        className="inline-flex items-center text-[#004D40] font-medium hover:text-[#55DD4A] transition-colors"
+                      >
+                        Read <MoveRight className="ml-1" size={16} />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-10">
+              <button 
+                onClick={() => setShowAllBlogs(!showAllBlogs)}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#004D40] hover:bg-[#00695c] transition-colors"
+              >
+                {showAllBlogs ? 'Show Less' : 'View All Blog Posts'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  );
+
+
 
   return (
     <>
@@ -425,9 +551,7 @@ const UserPage = () => {
                 </p>
                 
                 <div className="flex flex-wrap gap-4 justify-center">
-                  {/* <NavLink to="/signup" className="px-8 py-3 bg-[#55DD4A] text-white rounded-lg font-medium transition-all duration-300 hover:bg-white hover:text-[#004d40] transform hover:scale-105">
-                    Create Account
-                  </NavLink> */}
+               
                   
                   <NavLink to="/contact" className="px-8 py-3 border-2 border-white text-white rounded-lg font-medium transition-all duration-300 hover:bg-white/10">
                     Contact Us
@@ -438,6 +562,64 @@ const UserPage = () => {
           </div>
         </div>
       </section>
+
+{/* 
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <span className="text-[#55DD4A] font-medium text-sm uppercase tracking-wider">Latest News</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-2 mb-4">
+              Pet Care Blog
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Stay updated with the latest pet care tips and news
+            </p>
+          </div>
+
+          {loadingBlogs ? (
+            <p className="text-center">Loading blogs...</p>
+          ) : blogError ? (
+            <p className="text-center text-red-500">{blogError}</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {blogs.slice(0, 3).map((blog) => (
+                <div key={blog.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  <img 
+                    src={blog.image} 
+                    alt={blog.title} 
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-2">{blog.title}</h3>
+                    <p className="text-gray-600 text-sm mb-3">
+                      {blog.category_name} • {blog.author}
+                    </p>
+                    <p className="text-gray-700 mb-4">
+                      {blog.description.substring(0, 100)}...
+                    </p>
+                    <a 
+                      href={`/singleblog/${blog.id}`}
+                      className="text-[#004D40] font-medium hover:text-[#55DD4A] transition-colors inline-flex items-center"
+                    >
+                      Read more <MoveRight className="ml-2" size={16} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-10">
+            <a 
+              href="/blogs" 
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#004D40] hover:bg-[#00695c]"
+            >
+              View All Blog Posts
+            </a>
+          </div>
+        </div>
+      </section> */}
+{renderBlogSection()}
 
       {/* About Us and FAQs - Using existing components */}
       {/* <Aboutus />

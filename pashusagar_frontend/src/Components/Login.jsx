@@ -24,33 +24,59 @@ const Login = () => {
     setError("");
     setIsLoading(true);
 
+    // Basic validation
+    if (!email || !password) {
+      setError("Please provide both email and password.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/auth/login/",
+        { email, password },
         {
-          email,
-          password,
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
       console.log("Login response:", response.data);
 
-      const { access, username, email: userEmail, role, user_id } = response.data;
-
-      if (role === undefined || role === null) {
-        throw new Error("Role not found in the response.");
+      // Ensure all required fields exist in response
+      if (!response.data.access || !response.data.refresh) {
+        throw new Error("Invalid response from server");
       }
+
+      // Store tokens and user data
+      localStorage.setItem("token", response.data.access);
+      localStorage.setItem("refresh_token", response.data.refresh);
       
-      // Store user data in localStorage
-      localStorage.setItem("token", access);
-      localStorage.setItem("username", username);
-      localStorage.setItem("email", userEmail);
-      localStorage.setItem("role", role);
-      localStorage.setItem("user_id", user_id);
+      // Store additional user data if available
+      if (response.data.user_id) {
+        localStorage.setItem("user_id", response.data.user_id);
+      }
+      if (response.data.role) {
+        localStorage.setItem("role", response.data.role);
+      }
+      if (response.data.username) {
+        localStorage.setItem("username", response.data.username);
+      }
+      if (response.data.email) {
+        localStorage.setItem("email", response.data.email);
+      }
 
       toast.success("Login successful!");
       
-      // Redirect based on role
+      // Redirect based on role (with fallback)
+      const role = response.data.role || 1; // Default to regular user if role not provided
       if (role === 0) {
         navigate("/admin");
       } else if (role === 2) {
@@ -59,13 +85,22 @@ const Login = () => {
         navigate("/");
       }
     } catch (err) {
-      console.error(err);
-      setError(
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        "Invalid email or password."
-      );
-      toast.error("Login failed. Please check your credentials.");
+      console.error("Login error:", err);
+      
+      // Improved error handling
+      let errorMessage = "Login failed. Please try again.";
+      if (err.response) {
+        if (err.response.status === 401) {
+          errorMessage = "Invalid email or password.";
+        } else if (err.response.data?.detail) {
+          errorMessage = err.response.data.detail;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -121,7 +156,10 @@ const Login = () => {
                       id="email"
                       name="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setError("");
+                      }}
                       placeholder="your@email.com"
                       required
                       className="pl-10 w-full px-3 py-3 bg-white text-gray-800 border border-white/30 
@@ -150,9 +188,13 @@ const Login = () => {
                       id="password"
                       name="password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError("");
+                      }}
                       placeholder="••••••••"
                       required
+                      minLength={8}
                       className="pl-10 w-full px-3 py-3 bg-white text-gray-800 border border-white/30 
                       rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 
                       focus:ring-[#55DD4A] focus:border-transparent"
@@ -217,9 +259,10 @@ const Login = () => {
               <div className="mt-6">
                 <button
                   onClick={handleGoogleLogin}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white
+                  disabled={isLoading}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-3 bg-white
                   rounded-lg text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none 
-                  focus:ring-2 focus:ring-offset-2 focus:ring-[#55DD4A]"
+                  focus:ring-2 focus:ring-offset-2 focus:ring-[#55DD4A] ${isLoading ? "opacity-50" : ""}`}
                 >
                   <FcGoogle size={20} />
                   <span className="font-medium">Sign in with Google</span>

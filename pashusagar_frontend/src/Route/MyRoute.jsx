@@ -1,4 +1,3 @@
-// MyRoute.jsx
 import React from "react";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import App from "../App.jsx";
@@ -14,7 +13,7 @@ import MyAccount from "../Components/MyAccount.jsx";
 import Cart from "../Components/Cart.jsx";
 import VeterinarianPage from "../veterinarian/VeterinarianPage.jsx";
 import Appointments from "../veterinarian/Appointments.jsx";
-// import VeterinarianMessages from "../veterinarian/VeterinarianMessages.jsx";
+import VeterinarinanMessage from "../veterinarian/VeterinarinanMessage.jsx";
 import AddMedicine from "../veterinarian/AddMedicine.jsx";
 import Admin from "../Admin/Admin.jsx";
 import ChangePassword from "../pages/ChangePassword.jsx";
@@ -32,7 +31,8 @@ import AdminMessagePanel from "../Admin/AdminMessagePanel.jsx";
 import Message from "../pages/Message.jsx";
 import AdminMessage from "../pages/AdminMessage.jsx";
 import ProtectedRoutes from "../ProtectedRoutes.jsx";
-
+import Blog from "../veterinarian/BlogList.jsx"; // Import the Blog component
+import AddBlog from "../veterinarian/AddBlog.jsx"; // Import the AddBlog component
 
 const MyRoute = () => {
   return (
@@ -48,7 +48,6 @@ const MyRoute = () => {
           <Route path="/changepassword" element={<ProtectedRoutes Component={ChangePassword} requireAuth={true} />} />
           <Route path="/updateprofile" element={<ProtectedRoutes Component={UpdateProfile} requireAuth={true} />} />
           <Route path="/mycart" element={<ProtectedRoutes Component={Cart} requireAuth={true} />} />
-          <Route path="/message" element={<ProtectedRoutes Component={Message} requireAuth={true} />} />
           <Route path="/history" element={<ProtectedRoutes Component={History} requireAuth={true} />} />
           <Route path="/myaccount" element={<ProtectedRoutes Component={MyAccount} requireAuth={true} />} />
           
@@ -66,37 +65,66 @@ const MyRoute = () => {
           <Route path="/forgetpassword" element={<ForgotPassword />} />
           <Route path="/resetpassword" element={<ResetPassword />} />
           
-          {/* Role-specific Protected Routes */}
+          {/* General messaging route for users */}
+          <Route path="/message" element={<ProtectedRoutes Component={Message} requireAuth={true} />} />
+          
           {/* Veterinarian Routes - only for role 2 */}
-          <Route path="/veterinarians" element={<PrivateRoute allowedRoles={["2"]}>
-            <VeterinarianPage />
-          </PrivateRoute>} />
+          <Route path="/veterinarians" element={
+            <PrivateRoute allowedRoles={["2"]}>
+              <VeterinarianPage />
+            </PrivateRoute>
+          } />
           
-          <Route path="/veterinarian-Appointment" element={<PrivateRoute allowedRoles={["2"]}>
-            <Appointments/>
-          </PrivateRoute>} />
+          {/* Updated Veterinarian Blog Routes */}
+          <Route path="/veterinarian/blog" element={
+            <PrivateRoute allowedRoles={["2"]}>
+              <Blog />
+            </PrivateRoute>
+          } />
           
-          {/* <Route path="/veterinarian-message" element={<PrivateRoute allowedRoles={["2"]}>
-            <VeterinarinanMessage />
-          </PrivateRoute>} /> */}
+          <Route path="/veterinarian/add-blog" element={
+            <PrivateRoute allowedRoles={["2"]}>
+              <AddBlog />
+            </PrivateRoute>
+          } />
           
-          <Route path="/veterinarian-addMedicine" element={<PrivateRoute allowedRoles={["2"]}>
-            <AddMedicine />
-          </PrivateRoute>} />
+          <Route path="/veterinarian-Appointment" element={
+            <PrivateRoute allowedRoles={["2"]}>
+              <Appointments />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/veterinarian-message" element={
+            <PrivateRoute allowedRoles={["2"]}>
+              <VeterinarinanMessage />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/veterinarian-addMedicine" element={
+            <PrivateRoute allowedRoles={["2"]}>
+              <AddMedicine />
+            </PrivateRoute>
+          } />
           
           {/* Admin Routes - only for role 0 */}
-          <Route path="/adminMessage" element={<PrivateRoute allowedRoles={["0"]}>
-            <AdminMessage />
-          </PrivateRoute>} />
+          <Route path="/adminMessage" element={
+            <PrivateRoute allowedRoles={["0"]}>
+              <AdminMessage />
+            </PrivateRoute>
+          } />
           
-          <Route path="/admin-messages" element={<PrivateRoute allowedRoles={["0"]}>
-            <AdminMessagePanel />
-          </PrivateRoute>} />
+          <Route path="/admin-messages" element={
+            <PrivateRoute allowedRoles={["0"]}>
+              <AdminMessagePanel />
+            </PrivateRoute>
+          } />
           
           {/* Using Outlet pattern for these routes */}
           <Route path="/veterinarian" element={<PrivateRoute allowedRoles={["2"]} />}>
             <Route index element={<VeterinarianPage />} />
-            <Route path="veterinarian" element={<VeterinarianPage />} />
+            <Route path="blog" element={<Blog />} />
+            <Route path="add-blog" element={<AddBlog />} />
+            <Route path="messages" element={<VeterinarinanMessage />} />
           </Route>
           
           <Route path="/admin" element={<PrivateRoute allowedRoles={["0"]} />}>

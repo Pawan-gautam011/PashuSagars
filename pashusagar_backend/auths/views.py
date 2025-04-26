@@ -26,6 +26,37 @@ class VeterinarianRegistrationView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = VeterinarianRegistrationSerializer
 
+# class LoginAPIView(APIView):
+#     permission_classes = [permissions.AllowAny]
+
+#     def post(self, request):
+#         email = request.data.get('email')
+#         password = request.data.get('password')
+
+#         if not email or not password:
+#             return Response({'error': 'Please provide both email and password.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         user = authenticate(request, username=email, password=password)
+
+#         if not user:
+#             return Response({'error': 'Invalid email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+#         if not user.is_active:
+#             return Response({'error': 'Account is disabled.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+#         refresh = RefreshToken.for_user(user)
+#         access_token = refresh.access_token
+
+#         return Response({
+#             'refresh': str(refresh),
+#             'access': str(access_token),
+#             'role': user.role,
+#             'user_id': user.id,
+#             'phone': user.phone_number,
+#             'email': user.email,
+#             'username': user.username
+#         }, status=status.HTTP_200_OK)
+
 class LoginAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -34,27 +65,29 @@ class LoginAPIView(APIView):
         password = request.data.get('password')
 
         if not email or not password:
-            return Response({'error': 'Please provide both email and password.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Please provide both email and password.'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
 
         user = authenticate(request, username=email, password=password)
 
         if not user:
-            return Response({'error': 'Invalid email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Invalid email or password.'}, 
+                          status=status.HTTP_401_UNAUTHORIZED)
 
         if not user.is_active:
-            return Response({'error': 'Account is disabled.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Account is disabled.'}, 
+                          status=status.HTTP_401_UNAUTHORIZED)
 
         refresh = RefreshToken.for_user(user)
-        access_token = refresh.access_token
-
+        
         return Response({
             'refresh': str(refresh),
-            'access': str(access_token),
-            'role': user.role,
+            'access': str(refresh.access_token),
             'user_id': user.id,
-            'phone': user.phone_number,
+            'username': user.username,
             'email': user.email,
-            'username': user.username
+            'role': user.role,
+            'phone_number': user.phone_number,
         }, status=status.HTTP_200_OK)
 
 # Profile, Change Password, and Logout
