@@ -33,6 +33,7 @@ import AdminMessage from "../pages/AdminMessage.jsx";
 import ProtectedRoutes from "../ProtectedRoutes.jsx";
 import Blog from "../veterinarian/BlogList.jsx"; // Import the Blog component
 import AddBlog from "../veterinarian/AddBlog.jsx"; // Import the AddBlog component
+import Information from "../Components/Information.jsx";
 
 const MyRoute = () => {
   return (
@@ -43,7 +44,7 @@ const MyRoute = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/LoginUserpage" element={<LoginUserPage />} />
           <Route path="/signup" element={<Signup />} />
-          
+          <Route path="/information" element={<Information/>} />
           {/* Protected Routes - require authentication */}
           <Route path="/changepassword" element={<ProtectedRoutes Component={ChangePassword} requireAuth={true} />} />
           <Route path="/updateprofile" element={<ProtectedRoutes Component={UpdateProfile} requireAuth={true} />} />

@@ -34,6 +34,7 @@ import icon6 from "../assets/icon2.jpg";
 // Import components
 import Aboutus from "../Components/Aboutus";
 import FAQS from "../Components/FAQS";
+import Information from "../Components/Information";
 
 const UserPage = () => {
   const [activeFeature, setActiveFeature] = useState(0);
@@ -553,7 +554,7 @@ const UserPage = () => {
                 <div className="flex flex-wrap gap-4 justify-center">
                
                   
-                  <NavLink to="/contact" className="px-8 py-3 border-2 border-white text-white rounded-lg font-medium transition-all duration-300 hover:bg-white/10">
+                  <NavLink to="/information" className="px-8 py-3 border-2 border-white text-white rounded-lg font-medium transition-all duration-300 hover:bg-white/10">
                     Contact Us
                   </NavLink>
                 </div>
@@ -621,6 +622,7 @@ const UserPage = () => {
       </section> */}
 {renderBlogSection()}
 
+  <Information/>
       {/* About Us and FAQs - Using existing components */}
       {/* <Aboutus />
       <FAQS /> */}
