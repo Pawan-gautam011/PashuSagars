@@ -45,6 +45,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/aboutus" className="text-gray-300 hover:text-[#ADE1B0] transition-colors inline-block py-1">
+                  About Us
+                </Link>
+              </li>
+              <li>
                 <Link to="/pharmacy" className="text-gray-300 hover:text-[#ADE1B0] transition-colors inline-block py-1">
                   Pharmacy
                 </Link>
@@ -65,7 +70,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/faqs" className="text-gray-300 hover:text-[#ADE1B0] transition-colors inline-block py-1">
+                <Link to="/faq" className="text-gray-300 hover:text-[#ADE1B0] transition-colors inline-block py-1">
                   FAQs
                 </Link>
               </li>

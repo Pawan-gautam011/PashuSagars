@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/', include('blog.urls')),
     path('api/', include('notifications.urls')),
     path('api/', include('consultation.urls')),
+    
 
     # ReDoc documentation
     re_path(

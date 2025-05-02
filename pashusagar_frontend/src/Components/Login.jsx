@@ -76,14 +76,17 @@ const Login = () => {
       toast.success("Login successful!");
       
       // Redirect based on role (with fallback)
-      const role = response.data.role || 1; // Default to regular user if role not provided
-      if (role === 0) {
+      const role = response.data.role;
+      if (role === 0) {  // Admin
         navigate("/admin");
-      } else if (role === 2) {
-        navigate("/veterinarians");
-      } else {
+      } else if (role === 2) {  // Veterinarian
+        navigate("/veterinarians"); 
+      } else {  // Regular user
         navigate("/");
       }
+      
+      // Store role as string to match PrivateRoute expectations
+      localStorage.setItem("role", role.toString());
     } catch (err) {
       console.error("Login error:", err);
       

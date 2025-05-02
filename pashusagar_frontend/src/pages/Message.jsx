@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { MessageCircle, Star, Clock, User, Search, Home, ChevronRight, Send } from "lucide-react";
 import Navbar from "../Components/Navbar";
+import webSocketService from "../WebSocketService"; 
 
 function Message() {
   const location = useLocation();
@@ -20,6 +21,8 @@ function Message() {
     { label: "Online Consultation", path: "/online-consultation" },
     { label: "Messages", path: "/message" },
   ];
+
+  
 
   // Enhanced breadcrumbs component
   const EnhancedBreadcrumbs = ({ items }) => {
@@ -116,12 +119,77 @@ function Message() {
       )
     : [];
 
-  // Send message to the selected doctor
+  // Set up WebSocket connection and listeners
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    
+    const connectWebSocket = async () => {
+      try {
+        await webSocketService.connect(token);
+        
+        const handleNewMessage = (data) => {
+          if (data.type === 'new_message') {
+            setAllMessages(prev => [...prev, data.message]);
+          }
+        };
+        
+        webSocketService.addEventListener('new_message', handleNewMessage);
+        
+        return () => {
+          webSocketService.removeEventListener('new_message', handleNewMessage);
+        };
+      } catch (error) {
+        console.error("WebSocket connection failed:", error);
+        setError("Failed to connect to chat service. Please refresh the page.");
+      }
+    };
+    
+    connectWebSocket();
+    
+    return () => {
+      webSocketService.disconnect();
+    };
+  }, []);
+
+  // Modify your sendMessage function to use WebSocket
   const sendMessage = async () => {
     if (!userMessage.trim() || !selectedDoctor) {
       setError("Please select a doctor and type a message.");
       return;
     }
+
+    try {
+      // Send via WebSocket
+      const success = webSocketService.send({
+        type: 'new_message',
+        message: {
+          sender: Number(user_id),
+          recipient: selectedDoctor.id,
+          content: userMessage,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      if (success) {
+        // Optimistically update UI
+        const newMessage = {
+          id: Date.now(), // Temporary ID
+          sender: Number(user_id),
+          recipient: selectedDoctor.id,
+          content: userMessage,
+          timestamp: new Date().toISOString()
+        };
+        setAllMessages(prev => [...prev, newMessage]);
+        setUserMessage("");
+        setError(null);
+      } else {
+        setError("Failed to send message. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setError("Failed to send message. Please try again.");
+    }
+  
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/messages/", {

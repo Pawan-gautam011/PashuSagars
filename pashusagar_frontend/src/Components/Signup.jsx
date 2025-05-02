@@ -22,6 +22,12 @@ const Signup = () => {
 
   const navigate = useNavigate();
 
+  const validateUsername = (username) => {
+    const regex = /^[a-zA-Z0-9\s.,\-_@]+$/;
+    return regex.test(username);
+  };
+  
+
   const handleUsernameChange = (e) => {
     setUsername(e.target.value);
   };
@@ -31,6 +37,12 @@ const Signup = () => {
     setError("");
     setSuccess("");
     setIsLoading(true);
+
+    if (!validateUsername(username)) {
+      setError("Username contains invalid characters. Only letters, numbers, spaces, and . , - _ @ are allowed.");
+      setIsLoading(false);
+      return;
+    }
   
     // Basic validation
     if (!username.trim()) {
@@ -163,11 +175,11 @@ const Signup = () => {
                     <User className="absolute left-3 top-3.5 text-gray-500" size={18} />
                   </div>
                   
-                  {showUsernameHelp && (
-                    <div className="bg-white/10 p-3 rounded-lg mt-2 text-white/80 text-sm">
-                      <p>Username can contain letters, numbers, spaces, and basic punctuation (. , - _)</p>
-                    </div>
-                  )}
+                    {showUsernameHelp && (
+                      <div className="bg-white/10 p-3 rounded-lg mt-2 text-white/80 text-sm">
+                        <p>Username can contain letters, numbers, spaces, and basic punctuation (. , - _ @)</p>
+                      </div>
+                    )}
                 </div>
 
                 <div className="space-y-1">

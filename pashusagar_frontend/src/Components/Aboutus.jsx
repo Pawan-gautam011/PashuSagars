@@ -1,7 +1,49 @@
 import React from 'react'
-import { PawPrint, Stethoscope, CalendarCheck, HeartPulse } from "lucide-react";
+import { PawPrint, Stethoscope, CalendarCheck, HeartPulse, Home, ChevronRight } from "lucide-react";
 import about from "../assets/about1.jpg";
 import about2 from "../assets/about4.png";
+import Navbar from './Navbar';
+
+
+const breadcrumbItems = [
+  { label: "Home", path: "/" },
+  { label: "About US", path: "/aboutus" },
+];
+
+
+const EnhancedBreadcrumbs = ({ items }) => {
+  return (
+    <nav className="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-6">
+      <ol className="flex flex-wrap items-center">
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+          return (
+            <li key={index} className="flex items-center">
+              {index === 0 && <Home size={16} className="text-white mr-2" />}
+              
+              {isLast ? (
+                <span className="font-medium text-[#55DD4A]">{item.label}</span>
+              ) : (
+                <>
+                  <a 
+                    href={item.path} 
+                    className="text-white hover:text-[#ADE1B0] transition-colors"
+                  >
+                    {item.label}
+                  </a>
+                  <ChevronRight size={16} className="mx-2 text-white/60" />
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+};
+
+
+
 const Aboutus = () => {
 
 
@@ -42,7 +84,13 @@ const Aboutus = () => {
     <>
 
      
-        <div className="bg-[#004D40] h-auto relative overflow-hidden text-center pt-16 font-bold text-wrap">
+<Navbar />
+      <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C] pt-16 pb-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div className="container mx-auto">
+            <EnhancedBreadcrumbs items={breadcrumbItems} />
+          </div>
          
           <h2 className="text-[#55DD4A] text-6xl">About Us</h2>
           <h1 className="uppercase mt-9 text-xl text-[#ADE1B0]">
@@ -110,6 +158,7 @@ const Aboutus = () => {
               </p>
             </div>
           </div>
+        </div>
         </div>
     </>
   )

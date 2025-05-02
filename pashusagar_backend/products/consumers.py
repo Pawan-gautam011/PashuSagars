@@ -19,7 +19,50 @@ class MessageConsumer(AsyncWebsocketConsumer):
     """
     WebSocket consumer for handling real-time message notifications
     """
-    async def connect(self):
+    # consumers.py (update connection handling)
+async def connect(self):
+    try:
+        # Get token from query string
+        query_string = self.scope.get('query_string', b'').decode()
+        token_key = None
+        
+        # Parse query string (token=xxx)
+        for param in query_string.split('&'):
+            if param.startswith('token='):
+                token_key = param[6:]
+                break
+                
+        if not token_key:
+            await self.close(code=4001)
+            return
+            
+        user = await self.get_user_from_token(token_key)
+        
+        if isinstance(user, AnonymousUser):
+            await self.close(code=4001)
+            return
+            
+        self.user = user
+        self.group_name = f'messages_{user.id}'
+        
+        # Join user's personal group
+        await self.channel_layer.group_add(
+            self.group_name,
+            self.channel_name
+        )
+        
+        await self.accept()
+        
+        # Send connection confirmation
+        await self.send(text_data=json.dumps({
+            'type': 'connection_established',
+            'message': 'Connected to message notification service'
+        }))
+        
+    except Exception as e:
+        print(f"WebSocket connection error: {str(e)}")
+        await self.close(code=4001)
+        
         try:
             # Get token from query string
             token_key = self.scope['query_string'].decode().split('=')[1].split('&')[0]
@@ -127,6 +170,70 @@ class MessageConsumer(AsyncWebsocketConsumer):
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    async def receive(self, text_data):
+        try:
+            data = json.loads(text_data)
+            message_type = data.get('type', '')
+            
+            if message_type == 'new_message':
+                message_data = data.get('message', {})
+                sender_id = message_data.get('sender')
+                recipient_id = message_data.get('recipient')
+                content = message_data.get('content')
+                
+                if not all([sender_id, recipient_id, content]):
+                    await self.send(text_data=json.dumps({
+                        'type': 'error',
+                        'message': 'Missing required fields'
+                    }))
+                    return
+                
+                # Get user objects
+                try:
+                    sender = await self.get_user(sender_id)
+                    recipient = await self.get_user(recipient_id)
+                except User.DoesNotExist:
+                    await self.send(text_data=json.dumps({
+                        'type': 'error',
+                        'message': 'User not found'
+                    }))
+                    return
+                
+                # Save message to database
+                message_instance = await self.save_message(sender, recipient, content)
+                
+                # Prepare message data for broadcasting
+                message_payload = {
+                    'type': 'new_message',
+                    'message': {
+                        'id': message_instance.id,
+                        'sender': sender.id,
+                        'recipient': recipient.id,
+                        'content': message_instance.content,
+                        'timestamp': str(message_instance.timestamp),
+                        'is_read': False
+                    }
+                }
+                
+                # Send to sender's group (for confirmation)
+                await self.channel_layer.group_send(
+                    f'messages_{sender.id}',
+                    message_payload
+                )
+                
+                # Send to recipient's group
+                await self.channel_layer.group_send(
+                    f'messages_{recipient.id}',
+                    message_payload
+                )
+                
+        except Exception as e:
+            print(f"Error processing message: {str(e)}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f'Error processing message: {str(e)}'
+            }))
+
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f'chat_{self.room_name}'

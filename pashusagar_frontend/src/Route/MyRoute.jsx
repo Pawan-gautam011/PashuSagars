@@ -31,9 +31,11 @@ import AdminMessagePanel from "../Admin/AdminMessagePanel.jsx";
 import Message from "../pages/Message.jsx";
 import AdminMessage from "../pages/AdminMessage.jsx";
 import ProtectedRoutes from "../ProtectedRoutes.jsx";
-import Blog from "../veterinarian/BlogList.jsx"; // Import the Blog component
-import AddBlog from "../veterinarian/AddBlog.jsx"; // Import the AddBlog component
+import Blog from "../veterinarian/BlogList.jsx"; 
+import AddBlog from "../veterinarian/AddBlog.jsx";
 import Information from "../Components/Information.jsx";
+import FAQS from "../Components/FAQS.jsx";
+import Footer from "../Components/Footer.jsx";
 
 const MyRoute = () => {
   return (
@@ -45,6 +47,9 @@ const MyRoute = () => {
           <Route path="/LoginUserpage" element={<LoginUserPage />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/information" element={<Information/>} />
+          <Route path="/faq" element={<FAQS/>} />
+          <Route path="/footer" element={<Footer/>} />
+          
           {/* Protected Routes - require authentication */}
           <Route path="/changepassword" element={<ProtectedRoutes Component={ChangePassword} requireAuth={true} />} />
           <Route path="/updateprofile" element={<ProtectedRoutes Component={UpdateProfile} requireAuth={true} />} />

@@ -24,7 +24,8 @@
     "react-router-dom": "^7.1.1",
     "react-slick": "^0.30.3",
     "react-toastify": "^11.0.3",
-    "slick-carousel": "^1.8.1"
+    "slick-carousel": "^1.8.1",
+    "websocket": "^1.0.35"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",

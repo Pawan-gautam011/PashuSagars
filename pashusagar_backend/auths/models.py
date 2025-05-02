@@ -14,11 +14,11 @@ class CustomUser(AbstractUser):
     username = models.CharField(
         max_length=150,
         unique=True,
-        help_text='Required. 150 characters or fewer. Letters, spaces, and common punctuation allowed.',
+        help_text='Required. 150 characters or fewer. Letters, numbers, spaces, and common punctuation allowed.',
         validators=[
             RegexValidator(
-                regex=r'^[a-zA-Z0-9\s\.,\-_]+$', 
-                message='Username may contain only letters, numbers, spaces, and basic punctuation (. , - _).',
+                regex=r'^[a-zA-Z0-9\s\.,\-_@]+$',
+                message='Username may contain only letters, numbers, spaces, and basic punctuation (. , - _ @).',
                 code='invalid_username'
             ),
         ],

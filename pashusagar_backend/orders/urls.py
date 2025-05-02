@@ -4,6 +4,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
+
 from .views import (
     InitiatePaymentView, 
     VerifyPaymentView, 
@@ -27,6 +28,7 @@ urlpatterns = [
     path('orders/<int:pk>/status/', update_order_status, name='update-order-status'),
     path('admin/orders/', admin_orders, name='admin-orders'),
     path('orders/<int:pk>/prescription/', get_order_prescription, name='order-prescription'),
+    
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

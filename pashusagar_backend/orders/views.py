@@ -432,30 +432,43 @@ def get_order_prescription(request, pk):
             order = Order.objects.get(pk=pk, user=request.user)
         
         if not order.prescription_file:
-            return Response({"error": "No prescription file found"}, status=404)
+            return Response(
+                {"error": "No prescription file found for this order"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
         
         # Check if file exists in storage
         if not order.prescription_file.storage.exists(order.prescription_file.name):
-            return Response({"error": "Prescription file not found on server"}, status=404)
+            return Response(
+                {"error": "Prescription file not found on server"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
         
         # Get the file and return it
         file = order.prescription_file
-        filename = file.name.split('/')[-1]  # Get just the filename
+        filename = os.path.basename(file.name)
         
         # Set content type based on file extension
+        content_type = 'application/octet-stream'
         if filename.lower().endswith('.pdf'):
             content_type = 'application/pdf'
-        elif filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-            content_type = f'image/{filename.split(".")[-1].lower()}'
-        else:
-            content_type = 'application/octet-stream'
+        elif filename.lower().endswith('.png'):
+            content_type = 'image/png'
+        elif filename.lower().endswith(('.jpg', '.jpeg')):
+            content_type = 'image/jpeg'
         
         response = FileResponse(file.open('rb'), content_type=content_type)
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
         
     except Order.DoesNotExist:
-        return Response({"error": "Order not found"}, status=404)
+        return Response(
+            {"error": "Order not found"}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
     except Exception as e:
         print(f"Error retrieving prescription: {str(e)}")
-        return Response({"error": "Failed to retrieve prescription"}, status=500)
+        return Response(
+            {"error": "Failed to retrieve prescription"}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
