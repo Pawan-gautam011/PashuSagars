@@ -69,12 +69,14 @@ const Pharmacy = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [poisonousFilter, setPoisonousFilter] = useState("all"); // 'all', 'only-poisonous', 'non-poisonous'
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const breadcrumbItems = [
     { label: "Home", path: "/" },
     { label: "Pharmacy", path: "/pharmacy" },
   ];
 
+  // Fetch medicines when component mounts
   useEffect(() => {
     if (status === "idle") {
       dispatch(fetchMedicines());
@@ -85,32 +87,43 @@ const Pharmacy = () => {
   useEffect(() => {
     if (products?.length > 0) {
       // Extract unique categories
-      const uniqueCategories = [...new Set(products.map(product => product.category || "Uncategorized"))];
+      const uniqueCategories = [...new Set(products.map(product => 
+        product.category?.name || product.category || "Uncategorized"))];
       setCategories(["all", ...uniqueCategories]);
       
       // Apply filters
       applyFilters();
-    } else {
+      
+      // Mark initial load complete
+      if (!initialLoadComplete) {
+        setInitialLoadComplete(true);
+      }
+    } else if (status === "succeeded" && products?.length === 0) {
+      // If products array is empty but loading succeeded, show empty state
       setFilteredProducts([]);
+      setInitialLoadComplete(true);
     }
-  }, [products, searchTerm, priceRange, sortOption, selectedCategory, poisonousFilter]);
+  }, [products, searchTerm, priceRange, sortOption, selectedCategory, poisonousFilter, status, initialLoadComplete]);
 
   const applyFilters = () => {
-    if (!products) return;
+    if (!products || products.length === 0) return;
     
     let result = [...products];
     
     // Apply search filter
     if (searchTerm) {
       result = result.filter(product => 
-        product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase())
+        product.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     // Apply category filter
     if (selectedCategory && selectedCategory !== "all") {
-      result = result.filter(product => product.category === selectedCategory);
+      result = result.filter(product => 
+        product.category === selectedCategory || 
+        product.category?.name === selectedCategory
+      );
     }
     
     // Apply price range filter
@@ -144,7 +157,7 @@ const Pharmacy = () => {
         });
         break;
       default:
-        // Default "featured" sorting
+        // Default "featured" sorting - no change to order
         break;
     }
     
@@ -244,28 +257,31 @@ const Pharmacy = () => {
     return <div className="flex">{stars}</div>;
   };
 
+  // Helper function to check if products are actually loading or just empty
+  const isLoading = status === "loading" || (status === "idle" && !initialLoadComplete);
+
   return (
     <>
       <Navbar />
       <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C] pt-16 pb-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          
+
           {/* Enhanced Breadcrumbs */}
           <div className="container mx-auto">
             <EnhancedBreadcrumbs items={breadcrumbItems} />
           </div>
           
           {/* Hero Section */}
-          <div className="max-w-7xl mx-auto text-center py-8 md:py-12">
-            <h1 className="text-[#55DD4A] text-4xl md:text-5xl font-bold mb-4 animate-fade-in">
+          {/* <div className="max-w-7xl mx-auto text-center py-8 md:py-12"> */}
+            {/* <h1 className="text-[#55DD4A] text-4xl md:text-5xl font-bold mb-4 animate-fade-in">
               Veterinary Pharmacy
             </h1>
             <p className="mt-3 text-xl text-[#ADE1B0] max-w-3xl mx-auto">
               Explore quality medications and supplements for your animals' health and wellbeing.
-            </p>
+            </p> */}
             
             {/* Key Benefits */}
-            <div className="flex flex-wrap justify-center gap-6 mt-8">
+            {/* <div className="flex flex-wrap justify-center gap-6 mt-8">
               <div className="flex items-center bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                 <Truck size={18} className="text-[#55DD4A] mr-2" />
                 <span className="text-sm text-white">Fast Delivery</span>
@@ -278,14 +294,17 @@ const Pharmacy = () => {
                 <Clock size={18} className="text-[#55DD4A] mr-2" />
                 <span className="text-sm text-white">24/7 Support</span>
               </div>
-            </div>
+            </div> */}
+            {/* <h1 className="text-[#55DD4A] text-2xl md:text-2xl font-bold  animate-fade-in">
+              Veterinary Pharmacy
+            </h1> */}
             
-            <div className="h-px bg-gradient-to-r from-transparent via-[#ADE1B0] to-transparent my-8" />
-          </div>
+            {/* <div className="h-px bg-gradient-to-r from-transparent via-[#ADE1B0] to-transparent my-8" />
+          </div> */}
 
           <div className="max-w-7xl mx-auto pb-16">
             {/* Search and Filter Bar */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-8">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2 mb-4">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-grow">
                   <input
@@ -432,7 +451,7 @@ const Pharmacy = () => {
             </div>
             
             {/* Product Grid Section */}
-            {status === "loading" ? (
+            {isLoading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#55DD4A]"></div>
               </div>

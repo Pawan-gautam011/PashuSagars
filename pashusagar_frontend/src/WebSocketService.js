@@ -1,258 +1,182 @@
 // WebSocketService.js
 class WebSocketService {
-    constructor(url) {
-      this.baseUrl = url;
-      this.socket = null;
+  constructor() {
+    this.socket = null;
+    this.events = {};
+    this.connected = false;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+    this.reconnectTimeout = null;
+  }
+
+  // Connect to the WebSocket server
+  // WebSocketService.js - update connect method
+connect(token) {
+  return new Promise((resolve, reject) => {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      console.log("WebSocket already connected");
+      resolve();
+      return;
+    }
+
+    // Clear any existing reconnection attempts
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    // Log the exact URL we're connecting to
+    const url = `ws://127.0.0.1:8000/ws/messages/?token=${token}`;
+    console.log("Attempting to connect to WebSocket at:", url);
+    
+    this.socket = new WebSocket(url);
+
+    // Add a connection timeout
+    const connectionTimeout = setTimeout(() => {
+      console.log("WebSocket connection timeout");
+      this.socket.close();
+      reject(new Error("Connection timeout"));
+    }, 5000);
+
+    this.socket.onopen = () => {
+      clearTimeout(connectionTimeout);
+      console.log("WebSocket connection established");
+      this.connected = true;
       this.reconnectAttempts = 0;
-      this.maxReconnectAttempts = 5;
-      this.reconnectTimeout = 2000; // Start with 2 seconds
-      this.isConnecting = false;
-      this.connectionPromise = null;
-      this.callbacks = {
-        onConnect: () => {},
-        onDisconnect: () => {},
-        onMessage: () => {},
-        onError: () => {}
-      };
-      
-      // Ping interval to keep connection alive
-      this.pingInterval = null;
-      this.pingIntervalTime = 30000; // 30 seconds
-      
-      // Event listeners
-      this.eventListeners = {
-        'connection_established': [],
-        'new_message': [],
-        'message_sent': [],
-        'message_status_update': [],
-        'error': []
-      };
-    }
-  
-    /**
-     * Connect to WebSocket server with authentication token
-     * @param {string} token - JWT token for authentication
-     * @returns {Promise} - Resolves when connection is established, rejects on error
-     */
-    connect(token) {
-        // Return existing connection promise if already connecting
-        if (this.connectionPromise) {
-          return this.connectionPromise;
-        }
+      this.startPingInterval();
+      resolve();
+    };
+
+
+
+      this.socket.onclose = (event) => {
+        console.log(`WebSocket closed with code: ${event.code}`);
+        this.connected = false;
+        this.stopPingInterval();
         
-        // Return immediately if already connected
-        if (this.isConnected()) {
-          return Promise.resolve();
+        // Attempt to reconnect if not a normal closure
+        if (event.code !== 1000 && event.code !== 1001) {
+          this.attemptReconnect();
         }
-        
-        this.isConnecting = true;
-        this.connectionPromise = new Promise((resolve, reject) => {
-          const wsUrl = `${this.baseUrl}?token=${token}`;
-          console.log("Attempting WebSocket connection:", wsUrl);
+      };
+
+      this.socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        reject(error);
+      };
+
+      this.socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("WebSocket message received:", data);
           
-          try {
-            this.socket = new WebSocket(wsUrl);
-            
-            this.socket.onopen = () => {
-              console.log("WebSocket connection established");
-              this.isConnecting = false;
-              this.reconnectAttempts = 0;
-              this.startPingInterval();
-              this.callbacks.onConnect();
-              resolve();
-            };
-            
-            this.socket.onerror = (error) => {
-              console.error("WebSocket error:", error);
-              this.isConnecting = false;
-              this.triggerError("WebSocket connection error");
-              reject(error);
-            };
-            
-            this.socket.onclose = (event) => {
-              console.log(`WebSocket connection closed: ${event.code}`);
-              this.isConnecting = false;
-              this.stopPingInterval();
-              this.connectionPromise = null;
-              
-              // Only attempt reconnect if not explicitly closed
-              if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-                this.attemptReconnect(token);
-              }
-              
-              this.callbacks.onDisconnect(event);
-            };
-            
+          // Dispatch event to all registered handlers
+          if (data.type && this.events[data.type]) {
+            this.events[data.type].forEach(callback => callback(data));
+          }
+          
+          // Also dispatch to 'message' event handlers
+          if (this.events['message']) {
+            this.events['message'].forEach(callback => callback(data));
+          }
         } catch (error) {
-          console.error("Error creating WebSocket:", error);
-          this.isConnecting = false;
-          this.triggerError("Failed to create WebSocket connection");
-          reject(error);
+          console.error("Error parsing WebSocket message:", error);
         }
-      });
+      };
+    });
+  }
+
+  // Attempt to reconnect with exponential backoff
+  attemptReconnect() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.log("Max reconnection attempts reached");
+      return;
     }
-  
-    /**
-     * Attempt to reconnect to the WebSocket server
-     * @param {string} token - JWT token for authentication
-     */
-    attemptReconnect(token) {
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.log(`Maximum reconnect attempts (${this.maxReconnectAttempts}) reached`);
-        this.triggerError("Failed to reconnect after multiple attempts");
-        return;
-      }
-      
+
+    const delay = Math.min(30000, 1000 * Math.pow(2, this.reconnectAttempts));
+    console.log(`Attempting to reconnect in ${delay}ms`);
+    
+    this.reconnectTimeout = setTimeout(() => {
       this.reconnectAttempts++;
-      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-      
-      // Exponential backoff
-      const timeout = this.reconnectTimeout * Math.pow(1.5, this.reconnectAttempts - 1);
-      
-      setTimeout(() => {
+      const token = localStorage.getItem('token');
+      if (token) {
         this.connect(token).catch(() => {
-          // Connection attempt failed, the onclose handler will try again
-        });
-      }, timeout);
-    }
-  
-    /**
-     * Disconnect from the WebSocket server
-     */
-    disconnect() {
-      this.stopPingInterval();
-      
-      if (this.socket) {
-        // Prevent reconnection attempts
-        this.reconnectAttempts = this.maxReconnectAttempts;
-        
-        if (this.socket.readyState === WebSocket.OPEN) {
-          this.socket.close(1000); // Normal closure
-        }
-        
-        this.socket = null;
-      }
-    }
-  
-    /**
-     * Send data through the WebSocket connection
-     * @param {Object} data - Data to send
-     * @returns {boolean} - True if sent successfully, false otherwise
-     */
-    send(data) {
-      if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-        console.error("Cannot send message: WebSocket is not connected");
-        return false;
-      }
-      
-      try {
-        this.socket.send(JSON.stringify(data));
-        return true;
-      } catch (error) {
-        console.error("Error sending WebSocket message:", error);
-        return false;
-      }
-    }
-  
-    /**
-     * Send a message to another user
-     * @param {number} recipientId - Recipient user ID
-     * @param {string} content - Message content
-     * @returns {boolean} - True if sent successfully, false otherwise
-     */
-    sendMessage(recipientId, content) {
-      return this.send({
-        type: 'message',
-        recipient: recipientId,
-        content: content
-      });
-    }
-  
-    /**
-     * Start ping interval to keep connection alive
-     */
-    startPingInterval() {
-      this.stopPingInterval(); // Clear any existing interval
-      
-      this.pingInterval = setInterval(() => {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-          this.send({ type: 'ping' });
-        }
-      }, this.pingIntervalTime);
-    }
-  
-    /**
-     * Stop ping interval
-     */
-    stopPingInterval() {
-      if (this.pingInterval) {
-        clearInterval(this.pingInterval);
-        this.pingInterval = null;
-      }
-    }
-  
-    /**
-     * Register event callbacks
-     * @param {Object} callbacks - Object with callback functions
-     */
-    registerCallbacks(callbacks) {
-      if (callbacks.onConnect) this.callbacks.onConnect = callbacks.onConnect;
-      if (callbacks.onDisconnect) this.callbacks.onDisconnect = callbacks.onDisconnect;
-      if (callbacks.onMessage) this.callbacks.onMessage = callbacks.onMessage;
-      if (callbacks.onError) this.callbacks.onError = callbacks.onError;
-    }
-  
-    /**
-     * Add event listener for specific message types
-     * @param {string} event - Event type to listen for
-     * @param {Function} callback - Function to call when event is received
-     */
-    addEventListener(event, callback) {
-      if (!this.eventListeners[event]) {
-        this.eventListeners[event] = [];
-      }
-      
-      this.eventListeners[event].push(callback);
-    }
-  
-    /**
-     * Remove event listener
-     * @param {string} event - Event type
-     * @param {Function} callback - Function to remove
-     */
-    removeEventListener(event, callback) {
-      if (this.eventListeners[event]) {
-        this.eventListeners[event] = this.eventListeners[event].filter(
-          listener => listener !== callback
-        );
-      }
-    }
-  
-    /**
-     * Trigger error callback and event listeners
-     * @param {string} message - Error message
-     */
-    triggerError(message) {
-      const error = { type: 'error', message };
-      this.callbacks.onError(error);
-      
-      if (this.eventListeners.error) {
-        this.eventListeners.error.forEach(listener => {
-          listener(error);
+          // Connection failed, will retry
         });
       }
+    }, delay);
+  }
+
+  // Add event listener
+  addEventListener(type, callback) {
+    if (!this.events[type]) {
+      this.events[type] = [];
     }
-  
-    /**
-     * Check if the WebSocket is connected
-     * @returns {boolean} - True if connected, false otherwise
-     */
-    isConnected() {
-      return this.socket && this.socket.readyState === WebSocket.OPEN;
+    this.events[type].push(callback);
+  }
+
+  // Remove event listener
+  removeEventListener(type, callback) {
+    if (this.events[type]) {
+      this.events[type] = this.events[type].filter(cb => cb !== callback);
     }
   }
-  
-  // Create singleton instance
-  const webSocketService = new WebSocketService('ws://127.0.0.1:8000/ws/messages/');
-  
-  export default webSocketService;
+
+  // Send a message through the WebSocket
+  send(data) {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.error("WebSocket is not connected");
+      return false;
+    }
+
+    try {
+      this.socket.send(JSON.stringify(data));
+      return true;
+    } catch (error) {
+      console.error("Error sending WebSocket message:", error);
+      return false;
+    }
+  }
+
+  // Disconnect the WebSocket
+  disconnect() {
+    this.stopPingInterval();
+    
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+    
+    if (this.socket) {
+      this.socket.close(1000, "Normal closure");
+      this.socket = null;
+    }
+    
+    this.connected = false;
+  }
+
+  // Ping to keep connection alive
+  startPingInterval() {
+    this.pingInterval = setInterval(() => {
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        this.send({ type: 'ping' });
+      }
+    }, 30000); // Send ping every 30 seconds
+  }
+
+  stopPingInterval() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  // Check if WebSocket is connected
+  isConnected() {
+    return this.connected && this.socket && this.socket.readyState === WebSocket.OPEN;
+  }
+}
+
+// Create a singleton instance
+const webSocketService = new WebSocketService();
+export default webSocketService;

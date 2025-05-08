@@ -1,18 +1,27 @@
 // History.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Breadcrumbs from './BreadCrumbs';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { Calendar, Package2, AlertCircle, Home, ChevronRight } from 'lucide-react';
+import { Calendar, Package2, AlertCircle, Home, ChevronRight, Loader2 } from 'lucide-react';
 
 const History = () => {
-  // Default active tab set to "both" to display both orders and appointments initially.
-  const [activeTab, setActiveTab] = useState("both");
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem('historyActiveTab');
+    return savedTab || "both";
+  });
   const [orders, setOrders] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState({
+    order: null,
+    appointment: null
+  });
+
+  useEffect(() => {
+    localStorage.setItem('historyActiveTab', activeTab);
+  }, [activeTab]);
 
   const EnhancedBreadcrumbs = ({ items }) => {
     return (
@@ -50,7 +59,6 @@ const History = () => {
     { label: "History", path: "/history" },
   ];
 
-  // Helper function to format dates consistently
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -64,7 +72,6 @@ const History = () => {
     }
   };
 
-  // Helper for product images
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return '/placeholder.svg';
     if (imageUrl.startsWith('http')) {
@@ -73,215 +80,209 @@ const History = () => {
     return `http://127.0.0.1:8000${imageUrl}`;
   };
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const userId = localStorage.getItem('user_id');
-        
-        if (!token) {
-          setError("Authentication token missing. Please log in again.");
-          setLoading(false);
-          return;
-        }
+  const calculateOrderTotal = (order) => {
+    // First try to get the total from the order object itself
+    if (order.total_amount) return order.total_amount;
+    if (order.total) return order.total;
+    
+    // Calculate from items if total isn't provided
+    const subtotal = (order.items || order.products || order.cartItems || []).reduce(
+      (sum, item) => sum + (item.price * item.quantity), 
+      0
+    );
+    
+    const shippingCost = order.shipping_cost || 100;
+    return subtotal + shippingCost;
+  };
 
-        console.log("Fetching user history - User ID:", userId, "Token:", token ? "Present" : "Missing");
+  const handleCancelOrder = async (orderId) => {
+    setActionLoading(prev => ({ ...prev, order: orderId }));
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError("Please log in to cancel orders");
+        return;
+      }
+
+      const response = await axios.post(
+        `http://127.0.0.1:8000/api/orders/${orderId}/cancel/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.status === "success") {
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.id === orderId || order.order_id === orderId
+              ? { ...order, status: "cancelled", payment_status: "cancelled" }
+              : order
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      setError(error.response?.data?.detail || "Failed to cancel order");
+    } finally {
+      setActionLoading(prev => ({ ...prev, order: null }));
+    }
+  };
+
+  const fetchHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('user_id');
+      
+      if (!token) {
+        setError("Authentication token missing. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      let ordersData = [];
+      let appointmentsData = [];
+      
+      try {
+        const historyResponse = await axios.get('http://127.0.0.1:8000/api/history/', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         
-        // We'll track our fetch attempts and results
-        let ordersData = [];
-        let appointmentsData = [];
-        let fetchAttempts = [];
+        if (historyResponse.data.appointments) {
+          appointmentsData = historyResponse.data.appointments;
+        }
         
-        // 1. Try to fetch from the main history endpoint
+        if (historyResponse.data.orders && historyResponse.data.orders.length > 0) {
+          ordersData = historyResponse.data.orders.map(order => ({
+            ...order,
+            // Ensure we have items array even if it's called products or cartItems
+            items: order.items || order.products || order.cartItems || []
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching from main history endpoint:", error);
+      }
+      
+      if (ordersData.length === 0) {
         try {
-          const historyResponse = await axios.get('http://127.0.0.1:8000/api/history/', {
+          const ordersResponse = await axios.get('http://127.0.0.1:8000/api/orders/', {
             headers: { Authorization: `Bearer ${token}` },
           });
           
-          fetchAttempts.push({
-            endpoint: '/api/history/',
-            success: true,
-            data: historyResponse.data
-          });
-          
-          if (historyResponse.data.appointments) {
-            appointmentsData = historyResponse.data.appointments;
-          }
-          
-          if (historyResponse.data.orders && historyResponse.data.orders.length > 0) {
-            ordersData = historyResponse.data.orders;
-            console.log("Found orders in main history endpoint:", ordersData.length);
+          if (Array.isArray(ordersResponse.data)) {
+            ordersData = ordersResponse.data.map(order => ({
+              ...order,
+              items: order.items || order.products || order.cartItems || []
+            }));
+          } else if (ordersResponse.data && Array.isArray(ordersResponse.data.orders)) {
+            ordersData = ordersResponse.data.orders.map(order => ({
+              ...order,
+              items: order.items || order.products || order.cartItems || []
+            }));
           }
         } catch (error) {
-          fetchAttempts.push({
-            endpoint: '/api/history/',
-            success: false,
-            error: error.message
-          });
-          console.error("Error fetching from main history endpoint:", error);
+          console.error("Error fetching from orders endpoint:", error);
         }
-        
-        // 2. If no orders yet, try to fetch directly from orders endpoint
-        if (ordersData.length === 0) {
-          try {
-            const ordersResponse = await axios.get('http://127.0.0.1:8000/api/orders/', {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            
-            fetchAttempts.push({
-              endpoint: '/api/orders/',
-              success: true,
-              data: ordersResponse.data
-            });
-            
-            if (Array.isArray(ordersResponse.data)) {
-              ordersData = ordersResponse.data;
-              console.log("Found orders in orders endpoint:", ordersData.length);
-            } else if (ordersResponse.data && Array.isArray(ordersResponse.data.orders)) {
-              ordersData = ordersResponse.data.orders;
-              console.log("Found orders in orders.orders:", ordersData.length);
-            }
-          } catch (error) {
-            fetchAttempts.push({
-              endpoint: '/api/orders/',
-              success: false,
-              error: error.message
-            });
-            console.error("Error fetching from orders endpoint:", error);
-          }
-        }
-        
-        // 3. If still no orders, try the user-specific orders endpoint
-        if (ordersData.length === 0 && userId) {
-          try {
-            const userOrdersResponse = await axios.get(`http://127.0.0.1:8000/api/user/${userId}/orders/`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            
-            fetchAttempts.push({
-              endpoint: `/api/user/${userId}/orders/`,
-              success: true,
-              data: userOrdersResponse.data
-            });
-            
-            if (Array.isArray(userOrdersResponse.data)) {
-              ordersData = userOrdersResponse.data;
-              console.log("Found orders in user orders endpoint:", ordersData.length);
-            } else if (userOrdersResponse.data && Array.isArray(userOrdersResponse.data.orders)) {
-              ordersData = userOrdersResponse.data.orders;
-              console.log("Found orders in user orders.orders:", ordersData.length);
-            }
-          } catch (error) {
-            fetchAttempts.push({
-              endpoint: `/api/user/${userId}/orders/`,
-              success: false,
-              error: error.message
-            });
-            console.error("Error fetching from user orders endpoint:", error);
-          }
-        }
-        
-        // 4. Last resort - check if there are any purchase orders in localStorage
-        const cartHistory = localStorage.getItem('orderHistory');
-        if (ordersData.length === 0 && cartHistory) {
-          try {
-            const parsedHistory = JSON.parse(cartHistory);
-            if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
-              ordersData = parsedHistory;
-              console.log("Using order history from localStorage:", ordersData.length);
-            }
-          } catch (error) {
-            console.error("Error parsing cart history from localStorage:", error);
-          }
-        }
-        
-        // Check for updated order status
-        const checkOrderStatusUpdates = async () => {
-          const token = localStorage.getItem('token');
-          const orderHistory = localStorage.getItem('orderHistory');
-          
-          if (!token || !orderHistory) return;
-          
-          try {
-            const parsedOrders = JSON.parse(orderHistory);
-            
-            if (!Array.isArray(parsedOrders) || parsedOrders.length === 0) return;
-            
-            // For each locally stored order, check if its status has been updated in the backend
-            const orderIds = parsedOrders.map(order => order.id || order.order_id).filter(id => id);
-            
-            if (orderIds.length === 0) return;
-            
-            // Try to get updated status for these orders
-            for (const orderId of orderIds) {
-              try {
-                const response = await axios.get(`http://127.0.0.1:8000/api/orders/${orderId}/`, {
-                  headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                if (response.data && response.data.status) {
-                  // Update the local storage with the new status
-                  const updatedOrders = parsedOrders.map(order => {
-                    if ((order.id === orderId || order.order_id === orderId)) {
-                      return {
-                        ...order,
-                        status: response.data.status,
-                        payment_status: response.data.status
-                      };
-                    }
-                    return order;
-                  });
-                  
-                  localStorage.setItem('orderHistory', JSON.stringify(updatedOrders));
-                  console.log(`Updated status for order ${orderId} to ${response.data.status}`);
-                  
-                  // Also update the current orders state if needed
-                  ordersData = ordersData.map(order => {
-                    if ((order.id === orderId || order.order_id === orderId)) {
-                      return {
-                        ...order,
-                        status: response.data.status,
-                        payment_status: response.data.status
-                      };
-                    }
-                    return order;
-                  });
-                }
-              } catch (err) {
-                console.log(`Could not get updated status for order ${orderId}`);
-              }
-            }
-          } catch (err) {
-            console.error("Error checking for order status updates:", err);
-          }
-        };
-        
-        // Call the status update check
-        await checkOrderStatusUpdates();
-        
-        // Set the final data
-        setOrders(ordersData);
-        setAppointments(appointmentsData);
-        
-        // Log the full fetch attempts for debugging
-        console.log("All fetch attempts:", fetchAttempts);
-        
-        if (ordersData.length === 0 && appointmentsData.length === 0) {
-          console.log("No history data found in any endpoint");
-        }
-      } catch (error) {
-        console.error("Error in main fetch history function:", error);
-        setError("Failed to load history. Please try again later.");
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      if (ordersData.length === 0 && userId) {
+        try {
+          const userOrdersResponse = await axios.get(`http://127.0.0.1:8000/api/user/${userId}/orders/`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (Array.isArray(userOrdersResponse.data)) {
+            ordersData = userOrdersResponse.data.map(order => ({
+              ...order,
+              items: order.items || order.products || order.cartItems || []
+            }));
+          } else if (userOrdersResponse.data && Array.isArray(userOrdersResponse.data.orders)) {
+            ordersData = userOrdersResponse.data.orders.map(order => ({
+              ...order,
+              items: order.items || order.products || order.cartItems || []
+            }));
+          }
+        } catch (error) {
+          console.error("Error fetching from user orders endpoint:", error);
+        }
+      }
+      
+      const cartHistory = localStorage.getItem('orderHistory');
+      if (ordersData.length === 0 && cartHistory) {
+        try {
+          const parsedHistory = JSON.parse(cartHistory);
+          if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+            ordersData = parsedHistory.map(order => ({
+              ...order,
+              items: order.items || order.products || order.cartItems || []
+            }));
+          }
+        } catch (error) {
+          console.error("Error parsing cart history from localStorage:", error);
+        }
+      }
+      
+      // Fetch product details for all orders to get images and proper names
+      const productIds = new Set();
+      ordersData.forEach(order => {
+        order.items.forEach(item => productIds.add(item.product || item.id));
+      });
 
+      const productDetails = {};
+      if (productIds.size > 0) {
+        try {
+          const productResponses = await Promise.all(
+            Array.from(productIds).map(id => 
+              axios.get(`http://127.0.0.1:8000/api/products/${id}/`)
+            )
+          );
+          
+          productResponses.forEach(response => {
+            if (response.data) {
+              productDetails[response.data.id] = {
+                name: response.data.title || response.data.name,
+                image: response.data.image || response.data.images
+              };
+            }
+          });
+        } catch (error) {
+          console.error("Error fetching product details:", error);
+        }
+      }
+
+      // Enhance order items with product details
+      ordersData = ordersData.map(order => {
+        const enhancedItems = order.items.map(item => {
+          const productInfo = productDetails[item.product || item.id] || {};
+          return {
+            ...item,
+            product_name: productInfo.name || item.product_name || item.name || item.title || "Product",
+            product_image: productInfo.image || item.product_image || item.image || item.images
+          };
+        });
+
+        return {
+          ...order,
+          items: enhancedItems,
+          // Calculate total if not provided
+          total_amount: order.total_amount || calculateOrderTotal(order)
+        };
+      });
+
+      setOrders(ordersData);
+      setAppointments(appointmentsData);
+      
+      if (ordersData.length === 0 && appointmentsData.length === 0) {
+        console.log("No history data found in any endpoint");
+      }
+    } catch (error) {
+      console.error("Error in main fetch history function:", error);
+      setError("Failed to load history. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchHistory();
-    
-    // Set up periodic status checking if needed
-    // const statusInterval = setInterval(fetchHistory, 60000); // Check every minute
-    // return () => clearInterval(statusInterval);
   }, []);
 
   if (loading) {
@@ -302,248 +303,321 @@ const History = () => {
   return (
     <div>
       <Navbar/>
-    <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C] pt-16 pb-16">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <EnhancedBreadcrumbs items={breadcrumbItems} />
+      <div className="min-h-screen bg-gradient-to-b from-[#004D40] to-[#00695C] pt-16 pb-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <EnhancedBreadcrumbs items={breadcrumbItems} />
 
-        <div className="text-center mb-12">
-          <h2 className="text-[#55DD4A] text-5xl font-bold mb-4">History</h2>
-          <p className="text-[#ADE1B0] text-xl uppercase">
-            Check Your History with the platform
-          </p>
-          <hr className="w-full mt-5 border-[#ADE1B0]" />
-        </div>
+          <div className="text-center mb-12">
+            <h2 className="text-[#55DD4A] text-5xl font-bold mb-4">History</h2>
+            <p className="text-[#ADE1B0] text-xl uppercase tracking-wider">
+              Check Your History with the platform
+            </p>
+            <hr className="w-1/2 mx-auto mt-5 border-[#ADE1B0] opacity-50" />
+          </div>
 
-        {error && (
-          <div className="bg-red-600 bg-opacity-20 p-4 mb-8 rounded-lg flex items-center justify-center text-white">
-            <AlertCircle className="mr-2" />
-            <p>{error}</p>
+          {error && (
+            <div className="bg-red-600/30 border border-red-600/50 p-4 mb-8 rounded-lg flex items-center justify-between text-white backdrop-blur-sm">
+              <div className="flex items-center">
+                <AlertCircle className="mr-2" />
+                <p>{error}</p>
+              </div>
+              <button 
+                onClick={() => setError(null)} 
+                className="ml-4 bg-white/10 hover:bg-white/20 px-4 py-1 rounded-full text-sm transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          <div className="flex flex-col md:flex-row justify-center gap-4 mb-8">
             <button 
-              onClick={() => window.location.reload()} 
-              className="ml-4 bg-white text-red-800 px-4 py-1 rounded-full text-sm"
+              onClick={() => setActiveTab("both")}
+              className={`flex items-center gap-3 px-8 py-4 rounded-lg font-semibold transition-all duration-300 shadow-lg ${
+                activeTab === "both" 
+                  ? "bg-[#55DD4A] text-white shadow-[#55DD4A]/30 transform scale-[1.02]" 
+                  : "bg-white/10 text-white hover:bg-white/20 shadow-transparent"
+              }`}
             >
-              Try Again
+              All History
+            </button>
+            <button 
+              onClick={() => setActiveTab("pharmacy")}
+              className={`flex items-center gap-3 px-8 py-4 rounded-lg font-semibold transition-all duration-300 shadow-lg ${
+                activeTab === "pharmacy" 
+                  ? "bg-[#55DD4A] text-white shadow-[#55DD4A]/30 transform scale-[1.02]" 
+                  : "bg-white/10 text-white hover:bg-white/20 shadow-transparent"
+              }`}
+            >
+              <Package2 size={20} />
+              Pharmacy History
+            </button>
+            <button 
+              onClick={() => setActiveTab("appointment")}
+              className={`flex items-center gap-3 px-8 py-4 rounded-lg font-semibold transition-all duration-300 shadow-lg ${
+                activeTab === "appointment" 
+                  ? "bg-[#55DD4A] text-white shadow-[#55DD4A]/30 transform scale-[1.02]" 
+                  : "bg-white/10 text-white hover:bg-white/20 shadow-transparent"
+              }`}
+            >
+              <Calendar size={20} />
+              Appointment History
             </button>
           </div>
-        )}
 
-        {/* Tab Buttons */}
-        <div className="flex flex-col md:flex-row justify-center gap-4 mb-8">
-          <button 
-            onClick={() => setActiveTab("both")}
-            className={`flex items-center gap-3 px-8 py-4 rounded-lg font-semibold transition-all duration-300 ${
-              activeTab==="both" ? "bg-[#55DD4A] text-white transform scale-105" : "bg-white/10 text-white hover:bg-white/20"
-            }`}
-          >
-            All History
-          </button>
-          <button 
-            onClick={() => setActiveTab("pharmacy")}
-            className={`flex items-center gap-3 px-8 py-4 rounded-lg font-semibold transition-all duration-300 ${
-              activeTab==="pharmacy" ? "bg-[#55DD4A] text-white transform scale-105" : "bg-white/10 text-white hover:bg-white/20"
-            }`}
-          >
-            <Package2 size={24} />
-            Pharmacy History
-          </button>
-          <button 
-            onClick={() => setActiveTab("appointment")}
-            className={`flex items-center gap-3 px-8 py-4 rounded-lg font-semibold transition-all duration-300 ${
-              activeTab==="appointment" ? "bg-[#55DD4A] text-white transform scale-105" : "bg-white/10 text-white hover:bg-white/20"
-            }`}
-          >
-            <Calendar size={24} />
-            Appointment History
-          </button>
-        </div>
-
-        {/* Pharmacy (Orders) History Section */}
-        {(activeTab === "both" || activeTab === "pharmacy") && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 text-white mb-8">
-            <h3 className="text-2xl font-bold mb-6">Pharmacy History</h3>
-            <div className="grid gap-4">
-              {orders.length === 0 ? (
-                <div className="bg-white/5 rounded-lg p-8 text-center">
-                  <Package2 size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p>No purchase history found.</p>
-                  <p className="text-sm text-gray-300 mt-2">Your purchases will appear here after you make an order.</p>
-                </div>
-              ) : (
-                orders.map((order) => {
-                  console.log("Rendering order:", order);
-                  
-                  // Determine status color
-                  let statusColor = "bg-yellow-500/20 text-yellow-300"; // Default for pending
-                  if (order.status === "accepted" || order.payment_status === "accepted") {
-                    statusColor = "bg-green-600 text-green-300";
-                  } else if (order.status === "declined" || order.payment_status === "declined") {
-                    statusColor = "bg-red-500/20 text-red-300";
-                  } else if (order.status === "completed" || order.payment_status === "completed") {
-                    statusColor = "bg-green-600 text-green-300";
-                  }
-                  
-                  return (
-                    <div
-                      key={order.id || order.order_id || Math.random().toString(36).substring(7)}
-                      className="bg-white/5 rounded-lg p-4"
-                    >
-                      <div className="flex flex-col md:flex-row justify-between items-center">
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <h4 className="font-semibold text-lg">
-                              Order #{order.purchase_order_id || order.order_number || order.id || order.order_id || "N/A"}
-                            </h4>
-                            <p className="text-[#ADE1B0]">
-                              Payment Status: {order.payment_status || order.status || "Pending"}
-                            </p>
-                            <p className="text-sm text-gray-300">
-                              Created on {formatDate(order.created_at || order.date || order.created || order.timestamp)}
-                            </p>
-                            {(order.total || order.amount || order.total_amount) && (
-                              <p className="text-xl font-bold">
-                                Total: Rs. {order.total || order.amount || order.total_amount}
+          {(activeTab === "both" || activeTab === "pharmacy") && (
+            <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 text-white mb-8 border border-white/10">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold">Pharmacy History</h3>
+                <span className="bg-[#55DD4A]/20 text-[#55DD4A] px-3 py-1 rounded-full text-sm">
+                  {orders.length} {orders.length === 1 ? 'order' : 'orders'}
+                </span>
+              </div>
+              
+              <div className="grid gap-6">
+                {orders.length === 0 ? (
+                  <div className="bg-white/5 rounded-lg p-8 text-center border border-dashed border-white/10">
+                    <Package2 size={48} className="mx-auto mb-4 text-gray-300/50" />
+                    <p className="text-gray-300">No purchase history found.</p>
+                    <p className="text-sm text-gray-300/70 mt-2">
+                      Your purchases will appear here after you make an order.
+                    </p>
+                  </div>
+                ) : (
+                  orders.map((order) => {
+                    const status = order.status || order.payment_status || "Processing";
+                    let statusColor = "bg-yellow-500/20 text-yellow-300";
+                    
+                    if (status.toLowerCase() === "accepted" || status.toLowerCase() === "completed") {
+                      statusColor = "bg-green-600/20 text-green-300";
+                    } else if (status.toLowerCase() === "declined") {
+                      statusColor = "bg-red-500/20 text-red-300";
+                    } else if (status.toLowerCase() === "cancelled") {
+                      statusColor = "bg-gray-600/20 text-gray-300";
+                    }
+                    
+                    const canCancel = ["pending", "accepted"].includes(status.toLowerCase());
+                    const orderTotal = order.total_amount || calculateOrderTotal(order);
+                    const shippingCost = order.shipping_cost || 100;
+                    const subtotal = orderTotal - shippingCost;
+                    
+                    return (
+                      <div
+                        key={order.id || order.order_id || Math.random().toString(36).substring(7)}
+                        className="bg-white/5 rounded-xl p-6 border border-white/10 hover:border-[#55DD4A]/30 transition-colors"
+                      >
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                          <div className="flex items-start gap-4">
+                            <div className="bg-[#55DD4A]/10 p-3 rounded-lg">
+                              <Package2 size={24} className="text-[#55DD4A]" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-lg">
+                                Order #{order.purchase_order_id || order.order_number || order.id || order.order_id || "N/A"}
+                              </h4>
+                              <p className="text-[#ADE1B0]/80 text-sm">
+                                Created on {formatDate(order.created_at || order.date || order.created || order.timestamp)}
                               </p>
+                              <div className="mt-1 grid grid-cols-2 gap-x-4 text-sm">
+                                <div>
+                                  <span className="text-[#ADE1B0]/70">Subtotal: </span>
+                                  <span>Rs. {subtotal.toFixed(2)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[#ADE1B0]/70">Shipping: </span>
+                                  <span>Rs. {shippingCost.toFixed(2)}</span>
+                                </div>
+                                <div className="col-span-2">
+                                  <span className="text-[#ADE1B0]/70">Total: </span>
+                                  <span className="font-bold">Rs. {orderTotal.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span
+                              className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}
+                            >
+                              {status}
+                            </span>
+                            {canCancel && (
+                              <button
+                                onClick={() => handleCancelOrder(order.id || order.order_id)}
+                                disabled={actionLoading.order === (order.id || order.order_id)}
+                                className={`mt-2 bg-red-600/90 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                                  actionLoading.order === (order.id || order.order_id) ? 'opacity-70' : ''
+                                }`}
+                              >
+                                {actionLoading.order === (order.id || order.order_id) ? (
+                                  <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    Cancelling...
+                                  </>
+                                ) : (
+                                  'Cancel Order'
+                                )}
+                              </button>
                             )}
                           </div>
                         </div>
-                        <span
-                          className={`inline-block px-3 py-1 mt-3 md:mt-0 rounded-full text-sm ${statusColor}`}
-                        >
-                          {order.status || order.payment_status || "Processing"}
-                        </span>
+                        
+                        <div className="mt-6">
+                          <h5 className="font-bold mb-3 text-[#ADE1B0]">Order Items:</h5>
+                          <div className="grid gap-3">
+                            {order.items.length > 0 ? (
+                              order.items.map((item, index) => (
+                                <div key={index} className="flex items-center gap-4 bg-white/10 p-4 rounded-lg">
+                                  <img 
+                                    src={getImageUrl(item.product_image)} 
+                                    alt={item.product_name} 
+                                    className="w-16 h-16 rounded-lg object-cover border border-white/10" 
+                                  />
+                                  <div className="flex-1">
+                                    <h6 className="font-semibold">{item.product_name}</h6>
+                                    <div className="grid grid-cols-2 gap-2 mt-1 text-sm">
+                                      <span>Price: Rs. {item.price || 0}</span>
+                                      <span>Quantity: {item.quantity || 1}</span>
+                                      <span className="col-span-2">
+                                        Subtotal: Rs. {(item.price * item.quantity).toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="flex items-center gap-4 bg-white/10 p-4 rounded-lg">
+                                <div className="flex-1">
+                                  <h6 className="font-semibold">Order details</h6>
+                                  <div className="grid grid-cols-2 gap-2 mt-1 text-sm">
+                                    <span>Status: {order.payment_status || order.status || "Processing"}</span>
+                                    <span>
+                                      Total: Rs. {orderTotal.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="mt-4">
-                        <h5 className="font-bold mb-2">Order Items:</h5>
-                        <div className="grid gap-4">
-                          {/* Regular items format */}
-                          {order.items && order.items.length > 0 && order.items.map((item, index) => (
-                            <div key={index} className="flex items-center gap-4 bg-white/20 p-3 rounded">
-                              <img 
-                                src={getImageUrl(item.product_image || item.image)} 
-                                alt={item.product_name || item.name || "Product"} 
-                                className="w-16 h-16 rounded-lg object-cover" 
-                              />
-                              <div>
-                                <h6 className="font-semibold">{item.product_name || item.name || "Product"}</h6>
-                                <p className="text-sm">Price: Rs. {item.product_price || item.price || 0}</p>
-                                <p className="text-sm">Quantity: {item.quantity || 1}</p>
-                              </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {(activeTab === "both" || activeTab === "appointment") && (
+            <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 text-white border border-white/10">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold">Appointment History</h3>
+                <span className="bg-[#55DD4A]/20 text-[#55DD4A] px-3 py-1 rounded-full text-sm">
+                  {appointments.length} {appointments.length === 1 ? 'appointment' : 'appointments'}
+                </span>
+              </div>
+              
+              <div className="grid gap-4">
+                {appointments.length === 0 ? (
+                  <div className="bg-white/5 rounded-lg p-8 text-center border border-dashed border-white/10">
+                    <Calendar size={48} className="mx-auto mb-4 text-gray-300/50" />
+                    <p className="text-gray-300">No appointment history found.</p>
+                    <p className="text-sm text-gray-300/70 mt-2">
+                      Your appointments will appear here after you schedule one.
+                    </p>
+                  </div>
+                ) : (
+                  appointments.map((appointment) => {
+                    const status = appointment.status || (appointment.is_confirmed ? "Confirmed" : "Pending");
+                    const isFutureAppointment = new Date(appointment.appointment_date) > new Date();
+                    const canCancel = isFutureAppointment && status.toLowerCase() !== "cancelled";
+                    
+                    return (
+                      <div
+                        key={appointment.id || Math.random().toString(36).substring(7)}
+                        className="bg-white/5 rounded-xl p-6 border border-white/10 hover:border-[#55DD4A]/30 transition-colors"
+                      >
+                        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                          <div className="flex items-start gap-4">
+                            <div className="bg-[#55DD4A]/10 p-3 rounded-lg">
+                              <Calendar size={24} className="text-[#55DD4A]" />
                             </div>
-                          ))}
-                          
-                          {/* Alternative items format as products */}
-                          {order.products && order.products.length > 0 && order.products.map((item, index) => (
-                            <div key={index} className="flex items-center gap-4 bg-white/20 p-3 rounded">
-                              <img 
-                                src={getImageUrl(item.image || item.product_image)} 
-                                alt={item.name || item.title || "Product"} 
-                                className="w-16 h-16 rounded-lg object-cover" 
-                              />
-                              <div>
-                                <h6 className="font-semibold">{item.name || item.title || item.product_name || "Product"}</h6>
-                                <p className="text-sm">Price: Rs. {item.price || item.product_price || 0}</p>
-                                <p className="text-sm">Quantity: {item.quantity || 1}</p>
-                              </div>
-                            </div>
-                          ))}
-                          
-                          {/* Cart items directly if nothing else */}
-                          {order.cartItems && order.cartItems.length > 0 && order.cartItems.map((item, index) => (
-                            <div key={index} className="flex items-center gap-4 bg-white/20 p-3 rounded">
-                              <img 
-                                src={getImageUrl(item.images || item.image)} 
-                                alt={item.title || item.name || "Product"} 
-                                className="w-16 h-16 rounded-lg object-cover" 
-                              />
-                              <div>
-                                <h6 className="font-semibold">{item.title || item.name || "Product"}</h6>
-                                <p className="text-sm">Price: Rs. {item.price || 0}</p>
-                                <p className="text-sm">Quantity: {item.quantity || 1}</p>
-                              </div>
-                            </div>
-                          ))}
-                          
-                          {/* Order details without item details */}
-                          {(!order.items || order.items.length === 0) && 
-                           (!order.products || order.products.length === 0) &&
-                           (!order.cartItems || order.cartItems.length === 0) && (
-                            <div className="flex items-center gap-4 bg-white/20 p-3 rounded">
-                              <div>
-                                <h6 className="font-semibold">Order details</h6>
-                                <p className="text-sm">Status: {order.payment_status || order.status || "Processing"}</p>
-                                {(order.total || order.amount || order.total_amount) && (
-                                  <p className="text-sm">
-                                    Total: Rs. {order.total || order.amount || order.total_amount}
-                                  </p>
+                            <div>
+                              <h4 className="font-semibold text-lg">
+                                {`${appointment.first_name} ${appointment.last_name}`}
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mt-2 text-sm">
+                                <div>
+                                  <span className="text-[#ADE1B0]/80">Date: </span>
+                                  <span>{formatDate(appointment.appointment_date)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[#ADE1B0]/80">Time: </span>
+                                  <span>
+                                    {new Date(appointment.appointment_date).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                </div>
+                                {appointment.pet_name && (
+                                  <div>
+                                    <span className="text-[#ADE1B0]/80">Pet: </span>
+                                    <span>{appointment.pet_name}</span>
+                                  </div>
                                 )}
+                                <div>
+                                  <span className="text-[#ADE1B0]/80">Status: </span>
+                                  <span className={`${
+                                    status.toLowerCase() === 'confirmed' ? 'text-green-300' :
+                                    status.toLowerCase() === 'pending' ? 'text-yellow-300' :
+                                    status.toLowerCase() === 'cancelled' ? 'text-gray-300' : ''
+                                  }`}>
+                                    {status}
+                                  </span>
+                                </div>
                               </div>
+                              {appointment.description && (
+                                <div className="mt-2">
+                                  <p className="text-sm text-gray-300">
+                                    <span className="text-[#ADE1B0]/80">Notes: </span>
+                                    {appointment.description}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {canCancel && (
+                            <div className="md:self-center">
+                              <button
+                                onClick={() => handleCancelAppointment(appointment.id)}
+                                disabled={actionLoading.appointment === appointment.id}
+                                className={`bg-red-600/90 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                                  actionLoading.appointment === appointment.id ? 'opacity-70' : ''
+                                }`}
+                              >
+                                {actionLoading.appointment === appointment.id ? (
+                                  <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    Cancelling...
+                                  </>
+                                ) : (
+                                  'Cancel Appointment'
+                                )}
+                              </button>
                             </div>
                           )}
                         </div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
+                    );
+                  })
+                )}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Appointment History Section */}
-        {(activeTab === "both" || activeTab === "appointment") && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 text-white">
-            <h3 className="text-2xl font-bold mb-6">Appointment History</h3>
-            <div className="grid gap-4">
-              {appointments.length === 0 ? (
-                <div className="bg-white/5 rounded-lg p-8 text-center">
-                  <Calendar size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p>No appointment history found.</p>
-                  <p className="text-sm text-gray-300 mt-2">Your appointments will appear here after you schedule one.</p>
-                </div>
-              ) : (
-                appointments.map((appointment) => (
-                  <div
-                    key={appointment.id || Math.random().toString(36).substring(7)}
-                    className="bg-white/5 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between"
-                  >
-                    <div className="flex flex-col">
-                      <h4 className="font-semibold text-lg">
-                        Appointment for {`${appointment.first_name} ${appointment.last_name} `}
-                      </h4>
-                      <p className="text-sm text-gray-300">
-                        {formatDate(appointment.appointment_date)} at{" "}
-                        {new Date(appointment.appointment_date).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                      <p className="text-sm text-gray-300">
-                        Status: {appointment.status || (appointment.is_confirmed ? "Confirmed" : "Pending")}
-                      </p>
-                      {appointment.description && (
-                        <p className="text-sm text-gray-300 mt-2">
-                          Description: {appointment.description}
-                        </p>
-                      )}
-                      {/* Display pet name if available */}
-                      {appointment.pet_name && (
-                        <p className="text-sm text-gray-300">
-                          Pet: {appointment.pet_name}
-                        </p>
-                      )}
-                    </div>
-                    <span className="inline-block px-3 py-1 mt-3 md:mt-0 bg-green-600 text-green-300 rounded-full">
-                      {appointment.status || (appointment.is_confirmed ? "Confirmed" : "Pending")}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
     </div>
   );
 };

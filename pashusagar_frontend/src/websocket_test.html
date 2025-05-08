@@ -1,53 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple WebSocket Test</title>
+    <title>WebSocket Test</title>
 </head>
 <body>
     <h1>WebSocket Test</h1>
-    <div id="status">Disconnected</div>
     <div id="log"></div>
-    <button id="sendBtn">Send Test Message</button>
+    <input type="text" id="message" placeholder="Type a message">
+    <button id="send">Send</button>
+
     <script>
-        function addLog(text) {
-            const logDiv = document.getElementById('log');
-            const entry = document.createElement('p');
-            entry.textContent = text;
-            logDiv.appendChild(entry);
+        const log = document.getElementById('log');
+        const messageInput = document.getElementById('message');
+        const sendButton = document.getElementById('send');
+        
+        function addLog(message) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            log.appendChild(p);
         }
 
-        // No token for simplicity
-        const socket = new WebSocket('ws://127.0.0.1:8000/ws/messages/');
+        // Use a token from your authenticated user
+        const token = 'your-actual-token';
+        const socket = new WebSocket(`ws://127.0.0.1:8000/ws/messages/?token=${token}`);
         
-        socket.onopen = function(e) {
-            document.getElementById('status').innerText = 'Connected';
-            addLog('WebSocket connection established');
+        socket.onopen = function(event) {
+            addLog('Connection established');
         };
         
-        socket.onmessage = function(e) {
-            addLog('Message received: ' + e.data);
+        socket.onmessage = function(event) {
+            addLog(`Received: ${event.data}`);
         };
         
-        socket.onclose = function(e) {
-            document.getElementById('status').innerText = `Disconnected (Code: ${e.code})`;
-            addLog(`WebSocket closed with code: ${e.code}, reason: ${e.reason}`);
+        socket.onclose = function(event) {
+            addLog(`Connection closed: ${event.code}`);
         };
         
-        socket.onerror = function(e) {
-            document.getElementById('status').innerText = 'Error';
-            addLog('WebSocket error occurred');
+        socket.onerror = function(error) {
+            addLog(`Error: ${error}`);
         };
         
-        document.getElementById('sendBtn').addEventListener('click', function() {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({
-                    type: 'test',
-                    message: 'Hello from test client'
-                }));
-                addLog('Sent test message');
-            } else {
-                addLog('Socket not connected!');
-            }
+        sendButton.addEventListener('click', function() {
+            const message = messageInput.value;
+            socket.send(JSON.stringify({
+                type: 'message',
+                content: message
+            }));
+            addLog(`Sent: ${message}`);
+            messageInput.value = '';
         });
     </script>
 </body>

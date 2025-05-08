@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   User,
   Search,
@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Clock
 } from "lucide-react";
+import webSocketService from "../WebSocketService";
 
 const VeterinarinanMessage = () => {
   const [messages, setMessages] = useState([]);
@@ -23,8 +24,17 @@ const VeterinarinanMessage = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [connected, setConnected] = useState(false);
+  const messageEndRef = useRef(null);
   const user_id = localStorage.getItem("user_id");
   const token = localStorage.getItem("token");
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [conversationMessages]);
 
   // Fetch all messages
   const fetchMessages = async () => {
@@ -98,11 +108,69 @@ const VeterinarinanMessage = () => {
     // Convert map to array and sort by last message timestamp (newest first)
     const conversationsArray = Array.from(conversationMap.values())
       .sort((a, b) => {
-        return new Date(b.lastMessage?.timestamp) - new Date(a.lastMessage?.timestamp);
+        return new Date(b.lastMessage?.timestamp || 0) - new Date(a.lastMessage?.timestamp || 0);
       });
     
     setConversations(conversationsArray);
   };
+
+  // Set up WebSocket connection
+  useEffect(() => {
+    const setupWebSocket = async () => {
+      try {
+        await webSocketService.connect(token);
+        setConnected(true);
+        
+        const handleNewMessage = (data) => {
+          console.log("New message received:", data);
+          if (data.type === 'new_message' && data.message) {
+            // Update messages list
+            setMessages(prev => {
+              // Check if we already have this message
+              const exists = prev.some(msg => msg.id === data.message.id);
+              if (exists) return prev;
+              
+              const updatedMessages = [...prev, data.message];
+              // Re-organize conversations with the new message
+              organizeConversations(updatedMessages);
+              
+              // If this message is part of the selected conversation, update it
+              if (selectedConversation && 
+                  (data.message.sender === selectedConversation.userId || 
+                   data.message.recipient === selectedConversation.userId)) {
+                setConversationMessages(prevMsgs => [...prevMsgs, data.message]);
+              }
+              
+              return updatedMessages;
+            });
+          }
+        };
+        
+        webSocketService.addEventListener('new_message', handleNewMessage);
+        webSocketService.addEventListener('connection_established', () => {
+          console.log("WebSocket connection established");
+          setConnected(true);
+        });
+        
+        return () => {
+          webSocketService.removeEventListener('new_message', handleNewMessage);
+        };
+      }catch (error) {
+        console.error("WebSocket connection failed:", error);
+        // Just set connected to false without error message
+        setConnected(false);
+      }
+    };
+    
+    if (token) {
+      setupWebSocket();
+    }
+    
+    return () => {
+      // Don't disconnect here, as the service might be used elsewhere
+      // Just clean up event listeners
+    };
+  }, [token]);
 
   // In VeterinarinanMessage.jsx
   const [localReadMessages, setLocalReadMessages] = useState(() => {
@@ -138,7 +206,7 @@ const VeterinarinanMessage = () => {
     ).length;
   };
 
-  // Send a reply
+  // Send a reply via WebSocket and REST API
   const handleSendReply = async (e) => {
     e.preventDefault();
     
@@ -151,6 +219,40 @@ const VeterinarinanMessage = () => {
     setError("");
     setSuccess("");
     
+    // Create message data
+    const messageData = {
+      sender: parseInt(user_id),
+      recipient: selectedConversation.userId,
+      content: replyContent,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Clear input for better UX
+    const tempContent = replyContent;
+    setReplyContent("");
+    
+    // Optimistically add message to UI
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage = {
+      id: tempId,
+      sender: parseInt(user_id),
+      recipient: selectedConversation.userId,
+      content: tempContent,
+      timestamp: new Date().toISOString(),
+      is_sending: true
+    };
+    
+    setConversationMessages(prev => [...prev, optimisticMessage]);
+    
+    // Send via WebSocket first for real-time updates
+    if (connected) {
+      webSocketService.send({
+        type: 'new_message',
+        message: messageData
+      });
+    }
+    
+    // Send via REST API for persistence
     try {
       const response = await fetch("http://127.0.0.1:8000/api/messages/", {
         method: "POST",
@@ -161,7 +263,7 @@ const VeterinarinanMessage = () => {
         body: JSON.stringify({
           sender: parseInt(user_id),
           recipient: selectedConversation.userId,
-          content: replyContent
+          content: tempContent
         })
       });
       
@@ -171,32 +273,29 @@ const VeterinarinanMessage = () => {
       
       const newMessage = await response.json();
       
-      // Update local state immediately with "delivered" status
-      const deliveredMessage = {
-        ...newMessage,
-        is_read: false
-      };
-      
-      setMessages(prevMessages => [...prevMessages, deliveredMessage]);
-      setConversationMessages(prevMessages => [...prevMessages, deliveredMessage]);
-      
-      // Update conversations
-      setConversations(prevConversations => 
-        prevConversations.map(conv => {
-          if (conv.userId === selectedConversation.userId) {
-            return {
-              ...conv,
-              messages: [...conv.messages, deliveredMessage],
-              lastMessage: deliveredMessage
-            };
-          }
-          return conv;
-        })
+      // Replace optimistic message with real one
+      setConversationMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === tempId ? newMessage : msg
+        )
       );
       
-      setReplyContent("");
+      // Update the main messages list and conversations
+      setMessages(prevMessages => {
+        const updated = prevMessages.map(msg => 
+          msg.id === tempId ? newMessage : msg
+        ).filter(msg => msg.id !== tempId);
+        if (!updated.some(msg => msg.id === newMessage.id)) {
+          updated.push(newMessage);
+        }
+        
+        // Re-organize conversations
+        organizeConversations(updated);
+        
+        return updated;
+      });
+      
       setSuccess("Message sent successfully");
-   
       
       setTimeout(() => {
         setSuccess("");
@@ -204,8 +303,29 @@ const VeterinarinanMessage = () => {
     } catch (error) {
       console.error("Error sending message:", error);
       setError("Failed to send message. Please try again.");
+      
+      // Mark the optimistic message as failed
+      setConversationMessages(prev => 
+        prev.map(msg => 
+          msg.id === tempId ? { ...msg, is_sending: false, failed: true } : msg
+        )
+      );
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const testSocket = new WebSocket('ws://127.0.0.1:8000/ws/test/');
+testSocket.onopen = () => console.log('Test connection open');
+testSocket.onmessage = (e) => console.log('Test message:', e.data);
+testSocket.onerror = (e) => console.error('Test error:', e);
+testSocket.onclose = (e) => console.log('Test closed:', e.code);
+  
+  // Handle Enter key to send message
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendReply(e);
     }
   };
   
@@ -215,7 +335,7 @@ const VeterinarinanMessage = () => {
     setSearchQuery(query);
     
     if (!query.trim()) {
-      setFilteredMessages(messages);
+      setConversations(prev => [...prev]);
       return;
     }
     
@@ -230,9 +350,11 @@ const VeterinarinanMessage = () => {
   useEffect(() => {
     fetchMessages();
     
-    // Set up polling for new messages every 30 seconds
+    // Set up polling for new messages every 30 seconds as backup
     const interval = setInterval(() => {
-      fetchMessages();
+      if (!connected) {
+        fetchMessages();
+      }
     }, 30000);
     
     return () => clearInterval(interval);
@@ -265,6 +387,17 @@ const VeterinarinanMessage = () => {
               <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
               {isLoading ? "Refreshing..." : "Refresh"}
             </button>
+            {connected ? (
+              <div className="text-xs text-green-600 mt-1 text-center flex items-center justify-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                Connected to real-time updates
+              </div>
+            ) : (
+              <div className="text-xs text-yellow-600 mt-1 text-center flex items-center justify-center">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></span>
+                Offline mode
+              </div>
+            )}
           </div>
           
           {/* Conversations list */}
@@ -327,7 +460,7 @@ const VeterinarinanMessage = () => {
                           </>
                         ) : (
                           <span>
-                            {new Date(conversation.lastMessage?.timestamp).toLocaleTimeString([], {
+                            {new Date(conversation.lastMessage?.timestamp || new Date()).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit"
                             })}
@@ -335,9 +468,9 @@ const VeterinarinanMessage = () => {
                         )}
                       </span>
                       
-                      {conversation.unreadCount > 0 && (
+                      {getUnreadCount(conversation) > 0 && (
                         <span className="bg-[#55DD4A] text-white text-xs font-medium px-2 py-1 rounded-full">
-                          {conversation.unreadCount}
+                          {getUnreadCount(conversation)}
                         </span>
                       )}
                     </div>
@@ -364,6 +497,17 @@ const VeterinarinanMessage = () => {
                     </h2>
                   </div>
                 </div>
+                {connected ? (
+                  <div className="text-xs text-green-600 flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                    Online
+                  </div>
+                ) : (
+                  <div className="text-xs text-yellow-600 flex items-center">
+                    <span className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></span>
+                    Offline
+                  </div>
+                )}
               </div>
               
               {/* Messages area */}
@@ -395,10 +539,14 @@ const VeterinarinanMessage = () => {
                             </span>
                             {message.sender == user_id && (
                               <span className="flex items-center">
-                                {message.is_read ? (
-                                  <span className="text-xs text-[#55DD4A]">Seen</span>
+                                {message.is_sending ? (
+                                  <Clock size={12} className="text-gray-400 ml-1" />
+                                ) : message.failed ? (
+                                  <span className="text-xs text-red-500 ml-1">Failed</span>
+                                ) : message.is_read ? (
+                                  <span className="text-xs text-[#55DD4A] ml-1">Seen</span>
                                 ) : (
-                                  <span className="text-xs text-gray-400">Delivered</span>
+                                  <span className="text-xs text-gray-400 ml-1">Sent</span>
                                 )}
                               </span>
                             )}
@@ -406,6 +554,7 @@ const VeterinarinanMessage = () => {
                         </div>
                       </div>
                     ))}
+                    <div ref={messageEndRef} />
                   </>
                 )}
               </div>
@@ -430,6 +579,7 @@ const VeterinarinanMessage = () => {
                   <textarea
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
+                    onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
                     className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#55DD4A] focus:outline-none min-h-[80px] resize-none"
                     required
@@ -452,6 +602,9 @@ const VeterinarinanMessage = () => {
                     )}
                   </button>
                 </form>
+                <p className="text-xs text-gray-500 mt-2">
+                  Press Enter to send. Shift+Enter for new line.
+                </p>
               </div>
             </>
           ) : (

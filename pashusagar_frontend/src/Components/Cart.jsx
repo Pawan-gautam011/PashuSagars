@@ -905,21 +905,21 @@ const Cart = () => {
               </div>
               
               <div className="border-t mt-3 pt-3 space-y-1">
-  <div className="flex justify-between">
-    <span>Subtotal</span>
-    <span>Rs. {calculateSubtotal().toFixed(2)}</span>
-  </div>
-  <div className="flex justify-between">
-    <span>Delivery</span>
-    <span>Rs. {SHIPPING_COST.toFixed(2)}</span>
-  </div>
-  <div className="flex justify-between font-bold text-lg pt-2">
-    <span>Total</span>
-    <span className="text-[#004d40]">
-      Rs. {calculateTotal().toFixed(2)}
-    </span>
-  </div>
-</div>
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>Rs. {calculateSubtotal().toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Delivery</span>
+                  <span>Rs. {SHIPPING_COST.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg pt-2">
+                  <span>Total</span>
+                  <span className="text-[#004d40]">
+                    Rs. {calculateTotal().toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
