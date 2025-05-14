@@ -396,7 +396,7 @@ const History = () => {
                       statusColor = "bg-gray-600/20 text-gray-300";
                     }
                     
-                    const canCancel = ["pending", "accepted"].includes(status.toLowerCase());
+                    const canCancel = ["pending"].includes(status.toLowerCase());
                     const orderTotal = order.total_amount || calculateOrderTotal(order);
                     const shippingCost = order.shipping_cost || 100;
                     const subtotal = orderTotal - shippingCost;
