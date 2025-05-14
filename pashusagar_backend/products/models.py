@@ -44,10 +44,10 @@ class Product(models.Model):
 # Message Model for Chat
 class Message(models.Model):
     sender = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='sent_messages', on_delete=models.CASCADE, db_index=True
+        settings.AUTH_USER_MODEL, related_name='product_sent_messages', on_delete=models.CASCADE, db_index=True
     )
     recipient = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='received_messages', on_delete=models.CASCADE, db_index=True
+        settings.AUTH_USER_MODEL, related_name='product_received_messages', on_delete=models.CASCADE, db_index=True
     )
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True)

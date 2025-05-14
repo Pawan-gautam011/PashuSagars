@@ -52,7 +52,7 @@ class InitiatePaymentView(APIView):
                 print(f"Order created with ID: {order.id}")
                 
                 # Calculate total including shipping
-                subtotal = sum(item.product.price * item.quantity for item in order.items.all())
+                subtotal = sum(item.price * item.quantity for item in order.items.all())
                 shipping_fee = 100  # Fixed shipping fee
                 total_amount = subtotal + shipping_fee
                 
@@ -471,4 +471,104 @@ def get_order_prescription(request, pk):
         return Response(
             {"error": "Failed to retrieve prescription"}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+# Add these new views to views.py
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def cancel_order(request, pk):
+    """
+    Allow users to cancel their own orders
+    """
+    try:
+        order = Order.objects.get(pk=pk)
+        
+        # Check if user owns the order or is admin
+        if order.user != request.user and not (hasattr(request.user, 'role') and request.user.role == 0):
+            return Response(
+                {"detail": "You do not have permission to cancel this order."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if order can be cancelled (only pending or accepted orders)
+        if order.payment_status not in ['Pending', 'Accepted']:
+            return Response(
+                {"detail": "This order cannot be cancelled as it's already processed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update order status
+        order.payment_status = 'Cancelled'
+        order.save()
+        
+        # Create notification
+        Notification.objects.create(
+            user=order.user,
+            notification_type='order',
+            message=f"Your order #{order.id} has been cancelled."
+        )
+        
+        # Return stock if order was accepted
+        if order.payment_status == 'Accepted':
+            for item in order.items.all():
+                product = item.product
+                product.stock += item.quantity
+                product.save()
+        
+        return Response(
+            {"status": "success", "message": "Order cancelled successfully"},
+            status=status.HTTP_200_OK
+        )
+        
+    except Order.DoesNotExist:
+        return Response(
+            {"detail": "Order not found."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def cancel_appointment(request, pk):
+    """
+    Allow users to cancel their own appointments
+    """
+    try:
+        appointment = Appointment.objects.get(pk=pk)
+        
+        # Check if user owns the appointment
+        if appointment.customer != request.user:
+            return Response(
+                {"detail": "You do not have permission to cancel this appointment."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if appointment can be cancelled (not in the past)
+        from django.utils import timezone
+        if appointment.appointment_date < timezone.now():
+            return Response(
+                {"detail": "Cannot cancel past appointments."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Delete the appointment
+        appointment.delete()
+        
+        # Create notification
+        Notification.objects.create(
+            user=request.user,
+            notification_type='appointment',
+            message=f"Your appointment on {appointment.appointment_date.strftime('%Y-%m-%d')} has been cancelled."
+        )
+        
+        return Response(
+            {"status": "success", "message": "Appointment cancelled successfully"},
+            status=status.HTTP_200_OK
+        )
+        
+    except Appointment.DoesNotExist:
+        return Response(
+            {"detail": "Appointment not found."},
+            status=status.HTTP_404_NOT_FOUND
         )

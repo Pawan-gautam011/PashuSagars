@@ -13,7 +13,9 @@ from .views import (
     get_order,
     update_order_status,
     admin_orders,
-    get_order_prescription
+    get_order_prescription,
+    cancel_order,
+    cancel_appointment
 )
 
 urlpatterns = [
@@ -28,6 +30,8 @@ urlpatterns = [
     path('orders/<int:pk>/status/', update_order_status, name='update-order-status'),
     path('admin/orders/', admin_orders, name='admin-orders'),
     path('orders/<int:pk>/prescription/', get_order_prescription, name='order-prescription'),
+    path('orders/<int:pk>/cancel/', cancel_order, name='cancel-order'),
+    path('appointments/<int:pk>/cancel/', cancel_appointment, name='cancel-appointment'),
     
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

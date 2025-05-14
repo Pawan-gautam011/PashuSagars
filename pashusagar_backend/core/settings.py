@@ -22,9 +22,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'channels',
+    'consultation',
     'blog',
     'notifications',
-    'consultation',
     'drf_yasg',
     'auths',
     'products',
@@ -66,7 +66,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # For development only - change to False in production
+CORS_ALLOW_ALL_ORIGINS = True  
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -108,15 +108,15 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
-ASGI_APPLICATION = 'core.asgi.application'
+ASGI_APPLICATION = 'PashuSagar.asgi.application'
 # ASGI_APPLICATION = 'pashusagar.asgi.application'
 
 
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+    "default": {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
         },
     },
 }

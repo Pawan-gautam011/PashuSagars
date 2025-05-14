@@ -12,6 +12,7 @@ class Order(models.Model):
         ('Completed', 'Completed'),
         ('Failed', 'Failed'),
         ('Refunded', 'Refunded'),
+        ('Cancelled', 'Cancelled'),
     )
     PAYMENT_METHOD_CHOICES = (
         ('Khalti', 'Khalti'),
@@ -63,8 +64,11 @@ class Order(models.Model):
         Calculate the total order amount including shipping
         """
         items_total = sum(
-            item.product.price * item.quantity for item in self.items.all()
+            item.price * item.quantity for item in self.items.all()
         )
+
+ 
+
         shipping_cost = 100  # Default shipping cost
         return items_total + shipping_cost
 
@@ -77,6 +81,7 @@ class OrderItem(models.Model):
     )
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.quantity} x {self.product.title}"

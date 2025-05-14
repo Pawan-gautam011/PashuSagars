@@ -100,24 +100,17 @@ const OrderManagement = () => {
     }
   };
 
-  const getOrderTotal = (order) => {
-    let subtotal = 0;
-    
-    // Calculate from items if available
-    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
-      subtotal = order.items.reduce((sum, item) => {
-        const price = item.product_price || 
-                     (item.price ? parseFloat(item.price) : 0);
-        const quantity = item.quantity || 1;
-        return sum + (price * quantity);
-      }, 0);
-    }
-    
-    // Use fixed shipping cost of 100
-    const shippingCost = 100;
-    
-    return subtotal + shippingCost;
-  };
+const getOrderTotal = (order) => {
+  let subtotal = 0;
+  if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+    subtotal = order.items.reduce((sum, item) => {
+      const price = item.price ?? item.product_price ?? 0;   
+      return sum + (price * item.quantity);
+    }, 0);
+  }
+  return subtotal + 100;
+};
+
 
 
   const handleDownloadPrescription = async (orderId) => {

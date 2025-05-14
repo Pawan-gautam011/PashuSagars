@@ -1,16 +1,11 @@
-# serializers.py
+# consultation/serializers.py
 from rest_framework import serializers
-from .models import Consultation
-
-from .models import Message
-from auths.models import CustomUser  # Correct the import of CustomUser here
-from .models import CustomUser
+from .models import Consultation, Message
 
 class ConsultationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consultation
         fields = ["id", "name", "email", "problem", "created_at"]
-
 
 class MessageSerializer(serializers.ModelSerializer):
     sender_name = serializers.ReadOnlyField()
